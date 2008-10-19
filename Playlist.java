@@ -1,5 +1,3 @@
-package edu.utexas.cs.sheu.bayou;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;

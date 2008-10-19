@@ -1,5 +1,3 @@
-package edu.utexas.cs.sheu.bayou;
-
 public class Song {
 	private String title;
 	private String url;

@@ -1,4 +1,3 @@
-package edu.utexas.cs.sheu.bayou;
 import java.util.*;
 
 public class BayouClient{
