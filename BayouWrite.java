@@ -52,6 +52,7 @@ public class BayouWrite implements Comparable
 
     public int compareTo( Object write )
     {
+	int result;
 	BayouWrite otherWrite = (BayouWrite) write;
 	if( this == otherWrite )
 	    return 0;
@@ -61,10 +62,13 @@ public class BayouWrite implements Comparable
 	if( otherWrite.commitSN != null && this.commitSN == null)
 	    return 1;
 	if( otherWrite.commitSN != null && this.commitSN != null)
-	    return this.commitSN.compareTo( otherWrite.commitSN);
+	{
+	    result = this.commitSN.compareTo( otherWrite.commitSN);
+	    if( result != 0 )
+		return result;
+	}
 
-
-	int result = acceptStamp.compareTo(otherWrite.getAcceptStamp());
+	result = acceptStamp.compareTo(otherWrite.getAcceptStamp());
 	if( result != 0 )
 	    return result;
 	
