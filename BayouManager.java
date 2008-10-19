@@ -84,7 +84,12 @@ public class BayouManager
 	public void commandLine( String command )
 	{
 		String[] args = command.split( "\\s+" );
+
 		if ( args.length == 0 )
+			return;
+
+		if ( args[0].length() != 0 && args[0].charAt( 0 ) == '#' )
+			//  Comment
 			return;
 
 		if ( args[0].equalsIgnoreCase( "create" ) )
@@ -341,12 +346,12 @@ public class BayouManager
 		{
 			try
 			{
-				BufferedReader reader = new BufferedReader(
+				BufferedReader reader = new BufferedReader( 
 					new FileReader( args[1] ) );
 				String line;
 				while ( ( line = reader.readLine() ) != null )
 				{
-					System.out.print( "# " + line + '\n' );
+					System.out.print( "> " + line + '\n' );
 					manager.commandLine( line );
 				}
 			}
@@ -365,11 +370,11 @@ public class BayouManager
 		String line;
 		try
 		{
-			System.out.print( "# " );
+			System.out.print( "> " );
 			while ( ( line = reader.readLine() ) != null )
 			{
 				manager.commandLine( line );
-				System.out.print( "# " );
+				System.out.print( "> " );
 			}
 		}
 		catch ( IOException ex )
