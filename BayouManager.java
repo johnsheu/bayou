@@ -78,6 +78,9 @@ public class BayouManager
 		return emessage;
 	}
 
+	/*
+	 * Execute a command line.
+	 */
 	public void commandLine( String command )
 	{
 		String[] args = command.split( "\\s+" );
@@ -291,6 +294,23 @@ public class BayouManager
 			args[0].equalsIgnoreCase( "exit" ) )
 		{
 			System.exit( 0 );
+		}
+		else
+		{
+			System.out.print( "Commands:\n" );
+			System.out.print( " alias\n" );
+			System.out.print( " create\n" );
+			System.out.print( " exit\n" );
+			System.out.print( " get_addresses\n" );
+			System.out.print( " get_talking\n" );
+			System.out.print( " get_updating\n" );
+			System.out.print( " quit\n" );
+			System.out.print( " set_addresses\n" );
+			System.out.print( " set_talking\n" );
+			System.out.print( " set_updating\n" );
+			System.out.print( " unalias\n" );
+			System.out.print( "Call a command with no arguments for usage info\n" );
+			return;
 		}
 	}
 
