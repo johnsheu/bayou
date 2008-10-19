@@ -4,6 +4,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 public class BayouManager
@@ -19,14 +20,21 @@ public class BayouManager
 		communicator.start();
 	}
 
-	private InetSocketAddress getAddress( String host, String port )
+	private InetSocketAddress getAddress( String address )
 	{
-		if ( port == null )
+		int index = address.indexOf( ':' );
+		if ( index == -1 )
 		{
-			return aliases.get( host );
+			InetSocketAddress ret = aliases.get( address );
+			if ( ret == null )
+				System.out.print( "error: alias \"" + address +
+					"\" not found\n" );
+			return ret;
 		}
 		else
 		{
+			String host = address.substring( 0, index );
+			String port = address.substring( index + 1 );
 			int nport = 0;
 			try
 			{
@@ -99,24 +107,16 @@ public class BayouManager
 		}
 		else if ( args[0].equalsIgnoreCase( "alias" ) )
 		{
-			if ( args.length != 4 )
+			if ( args.length != 3 )
 			{
-				System.out.print( "alias <host> <port> <alias>\n" );
+				System.out.print( "alias <host:port> <alias>\n" );
 				return;
 			}
-			int port = 0;
-			try
-			{
-				port = Integer.parseInt( args[2] );
-			}
-			catch ( NumberFormatException ex )
-			{
-				ex.printStackTrace();
+			InetSocketAddress address = getAddress( args[1] );
+			if ( address == null )
 				return;
-			}
-			InetSocketAddress address =
-				new InetSocketAddress( args[1], port );
-			aliases.put( args[3], address );
+
+			aliases.put( args[2], address );
 			return;
 		}
 		else if ( args[0].equalsIgnoreCase( "unalias" ) )
@@ -129,25 +129,46 @@ public class BayouManager
 			aliases.remove( args[1] );
 			return;
 		}
-		else if ( args[0].equalsIgnoreCase( "get_talking" ) )
+		else if ( args[0].equalsIgnoreCase( "sleep" ) )
 		{
-			InetSocketAddress address = null;
-			if ( args.length == 2 )
-				address = getAddress( args[1], null );
-			else if ( args.length == 3 )
-				address = getAddress( args[1], args[2] );
-			else
+			if ( args.length != 2 )
 			{
-				System.out.print( "get_talking <host> <port>\n" );
-				System.out.print( "get_talking <alias>\n" );
+				System.out.print( "sleep <time>\n" );
+				return;
+			}
+			float time = 0.0f;
+			try
+			{
+				time = Float.parseFloat( args[1] );
+			}
+			catch ( NumberFormatException ex )
+			{
+				ex.printStackTrace();
 				return;
 			}
 
-			if ( address == null )
+			long stime = (long)( time * 1000.0f );
+			try
 			{
-				System.out.print( "error reading address\n" );
+				Thread.currentThread().sleep( stime );
+			}
+			catch ( InterruptedException ex )
+			{
+
+			}
+			return;
+		}
+		else if ( args[0].equalsIgnoreCase( "get_talking" ) )
+		{
+			if ( args.length != 2 )
+			{
+				System.out.print( "get_talking <host:port>|<alias>\n" );
 				return;
 			}
+
+			InetSocketAddress address = getAddress( args[1] );
+			if ( address == null )
+				return;
 
 			ManagerMessage message = new ManagerMessage();
 			message.setAddress( address );
@@ -159,30 +180,16 @@ public class BayouManager
 		}
 		else if ( args[0].equalsIgnoreCase( "set_talking" ) )
 		{
-			InetSocketAddress address = null;
-			boolean value = true;
-			if ( args.length == 3 )
+			if ( args.length != 3 )
 			{
-				address = getAddress( args[1], null );
-				value = Boolean.parseBoolean( args[2] );
-			}
-			else if ( args.length == 4 )
-			{
-				address = getAddress( args[1], args[2] );
-				value = Boolean.parseBoolean( args[3] );
-			}
-			else
-			{
-				System.out.print( "set_talking <host> <port> <\"true\"|\"false\">\n" );
-				System.out.print( "set_talking <alias> <\"true\"|\"false\">\n" );
+				System.out.print( "set_talking <host:port>|<alias> <\"true\"|\"false\">\n" );
 				return;
 			}
 
+			boolean value = Boolean.parseBoolean( args[2] );
+			InetSocketAddress address = getAddress( args[1] );
 			if ( address == null )
-			{
-				System.out.print( "error reading address\n" );
 				return;
-			}
 
 			ManagerMessage message = new ManagerMessage();
 			message.setAddress( address );
@@ -193,23 +200,15 @@ public class BayouManager
 		}
 		else if ( args[0].equalsIgnoreCase( "get_updating" ) )
 		{
-			InetSocketAddress address = null;
-			if ( args.length == 2 )
-				address = getAddress( args[1], null );
-			else if ( args.length == 3 )
-				address = getAddress( args[1], args[2] );
-			else
+			if ( args.length != 2 )
 			{
-				System.out.print( "get_updating <host> <port>\n" );
-				System.out.print( "get_updating <alias>\n" );
+				System.out.print( "get_updating <host:port>|<alias>\n" );
 				return;
 			}
 
+			InetSocketAddress address = getAddress( args[1] );
 			if ( address == null )
-			{
-				System.out.print( "error reading address\n" );
 				return;
-			}
 
 			ManagerMessage message = new ManagerMessage();
 			message.setAddress( address );
@@ -221,35 +220,70 @@ public class BayouManager
 		}
 		else if ( args[0].equalsIgnoreCase( "set_updating" ) )
 		{
-			InetSocketAddress address = null;
-			boolean value = true;
-			if ( args.length == 3 )
+			if ( args.length != 3 )
 			{
-				address = getAddress( args[1], null );
-				value = Boolean.parseBoolean( args[2] );
-			}
-			else if ( args.length == 4 )
-			{
-				address = getAddress( args[1], args[2] );
-				value = Boolean.parseBoolean( args[3] );
-			}
-			else
-			{
-				System.out.print( "set_updating <host> <port> <\"true\"|\"false\">\n" );
-				System.out.print( "set_updating <alias> <\"true\"|\"false\">\n" );
+				System.out.print( "set_updating <host:port>|<alias> <\"true\"|\"false\">\n" );
 				return;
 			}
 
+			boolean value = Boolean.parseBoolean( args[2] );
+			InetSocketAddress address = getAddress( args[1] );
 			if ( address == null )
-			{
-				System.out.print( "error reading address\n" );
 				return;
-			}
 
 			ManagerMessage message = new ManagerMessage();
 			message.setAddress( address );
 			message.makeMessage( ManagerMessage.Type.SET_UPDATING,
 				null, value, null );
+			communicator.sendMessage( message );
+			return;
+		}
+		else if ( args[0].equalsIgnoreCase( "get_addresses" ) )
+		{
+			if ( args.length != 2 )
+			{
+				System.out.print( "get_addresses <host:port>|<alias>\n" );
+				return;
+			}
+
+			InetSocketAddress address = getAddress( args[1] );
+			if ( address == null )
+				return;
+
+			ManagerMessage message = new ManagerMessage();
+			message.setAddress( address );
+			message.makeMessage( ManagerMessage.Type.GET_ADDRESSES,
+				null, null, null );
+			Message reply = getMessageReply( message );
+			System.out.print( reply.toString() + '\n' );
+			return;
+		}
+		else if ( args[0].equalsIgnoreCase( "set_addresses" ) )
+		{
+			if ( args.length < 2 )
+			{
+				System.out.print( "set_addresses <host:port>|<alias> [<host1:port1>|<alias1> <host2:port2>|<alias2> ...]" );
+				return;
+			}
+
+			InetSocketAddress address = getAddress( args[1] );
+			if ( address == null )
+				return;
+
+			ArrayList<InetSocketAddress> addresses =
+				new ArrayList<InetSocketAddress>();
+			for ( int i = 2; i < args.length; i += 1 )
+			{
+				InetSocketAddress addr = getAddress( args[i] );
+				if ( addr == null )
+					continue;
+				addresses.add( addr );
+			}
+
+			ManagerMessage message = new ManagerMessage();
+			message.setAddress( address );
+			message.makeMessage( ManagerMessage.Type.SET_ADDRESSES,
+				null, null, addresses );
 			communicator.sendMessage( message );
 			return;
 		}
@@ -292,7 +326,7 @@ public class BayouManager
 				String line;
 				while ( ( line = reader.readLine() ) != null )
 				{
-					System.out.print( line + '\n' );
+					System.out.print( "# " + line + '\n' );
 					manager.commandLine( line );
 				}
 			}
@@ -311,9 +345,11 @@ public class BayouManager
 		String line;
 		try
 		{
+			System.out.print( "# " );
 			while ( ( line = reader.readLine() ) != null )
 			{
 				manager.commandLine( line );
+				System.out.print( "# " );
 			}
 		}
 		catch ( IOException ex )
