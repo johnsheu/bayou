@@ -54,10 +54,10 @@ public class BayouWrite implements Comparable<BayouWrite>, Serializable
 		this.writeID = id;
 	}
 
-    public int compareTo( BayouWrite other )
-    {
+	public int compareTo( BayouWrite other )
+	{
 		return writeID.compareTo( other.writeID );
-    }
+	}
 
 	public String toString()
 	{
