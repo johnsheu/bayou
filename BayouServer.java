@@ -1,8 +1,17 @@
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.math.BigInteger;
 import java.net.InetSocketAddress;
+
 
 public class BayouServer extends Thread
 {
+	private ServerID serverID;
+	private BigInteger acceptStampCounter;
+	private BigInteger largestKnownCSN;
+	private HashMap<ServerID, BigInteger> versionVector;
+	private HashMap<ServerID, BigInteger> omittedVector;
+
 	private Communicator communicator;
 
 	private Database database;
