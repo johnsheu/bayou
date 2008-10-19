@@ -20,11 +20,15 @@ public class Communicator
 	 */
 	private class SenderThread extends Thread
 	{
-		private boolean active = false;
+		private volatile boolean active = false;
 
-		public SenderThread()
+		private int port = -1;
+
+		public SenderThread( int port )
 		{
-
+			//  Java VM should not wait for thread to die naturally
+			this.port = port;
+			setDaemon( true );
 		}
 
 		//  Set active state
@@ -57,25 +61,30 @@ public class Communicator
 				//  Send all messages in queue
 				while ( !senderQueue.isEmpty() )
 				{
+					Message message = senderQueue.poll();
 					try
 					{
-						Message message = senderQueue.poll();
 						Socket socket = new Socket();
 						socket.connect( message.getAddress() );
 						ObjectOutputStream oos =
 							new ObjectOutputStream( socket.getOutputStream() );
+						message.setAddress( socket.getLocalAddress(), port );
 						oos.writeObject( message );
 					}
 					catch ( IOException ex )
 					{
 						ex.printStackTrace();
+						ErrorMessage emessage = new ErrorMessage();
+						emessage.setAddress( message.getAddress() );
+						emessage.setError( ex.toString() );
+						receiverQueue.offer( emessage );
 					}
 				}
 
 				//  Sleep until next poll or interruption
 				try
 				{
-					sleep( 100 );
+					sleep( 50 );
 				}
 				catch ( InterruptedException ex )
 				{
@@ -90,17 +99,20 @@ public class Communicator
 	 */
 	private class ReceiverThread extends Thread
 	{
-		private boolean active = false;
+		private volatile boolean active = false;
 
 		private ServerSocket ssocket = null;
 
 		public ReceiverThread( int port )
 		{
+			//  Java VM should not wait for thread to die naturally
+			setDaemon( true );
+
 			try
 			{
 				ssocket = new ServerSocket( port );
 				//  100-millisecond polling
-				ssocket.setSoTimeout( 100 );
+				ssocket.setSoTimeout( 50 );
 			}
 			catch ( IOException ex )
 			{
@@ -143,6 +155,7 @@ public class Communicator
 						ObjectInputStream oos =
 							new ObjectInputStream( socket.getInputStream() );
 						Object o = oos.readObject();
+						Message m = (Message)o;
 						receiverQueue.offer( (Message)o );
 					}
 				}
@@ -179,12 +192,12 @@ public class Communicator
 		receiverQueue = new ConcurrentLinkedQueue<Message>();
 		senderQueue = new ConcurrentLinkedQueue<Message>();
 		receiver = new ReceiverThread( port );
-		sender = new SenderThread();
+		sender = new SenderThread( port );
 	}
 
 	/**
 	 * Send a message using this <code>Communicator</code>.  The message
-	 * is put into the sender queue and sent asynchronously.
+	 * is put into the sender queue and sent asynchronously
 	 *
 	 * @param message  the {@link Message} object to send
 	 *
@@ -199,15 +212,28 @@ public class Communicator
 
 	/**
 	 * Read a message using this <code>Communicator</code>.  The message
-	 * is read off the message queue.  If the queue is empty, it returns
-	 * <code>null</code>.
+	 * is read and removed from the message queue.  If the queue is empty,
+	 * it returns <code>null</code>.
 	 *
 	 * @return  the {@link Message} at the front of the receive queue, or
-	 *          <code>null</code> if the queue is empty.
+	 *          <code>null</code> if the queue is empty
 	 */
 	public Message readMessage()
 	{
 		return receiverQueue.poll();
+	}
+
+	/**
+	 * Peek at a message using this <code>Communicator</code>.  The message
+	 * is read from the message queue, but not removed.  If the queue is
+	 * empty, it returns <code>null</code>.
+	 *
+	 * @return  the {@link Message} at the front of the receive queue, or
+	 *          <code>null</code> if the queue is empty
+	 */
+	public Message peekMessage()
+	{
+		return receiverQueue.peek();
 	}
 
 	/**
@@ -233,8 +259,8 @@ public class Communicator
 	/**
 	 * Tests if this <code>Communicator</code> is performing I/O.
 	 *
-	 * @return <code>true</code> if the I/O threads are running,
-	 * <code>false</code> otherwise.
+	 * @return  <code>true</code> if the I/O threads are running,
+	 *          <code>false</code> otherwise
 	 */
 	public boolean isStarted()
 	{

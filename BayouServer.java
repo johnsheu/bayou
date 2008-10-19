@@ -1,96 +1,169 @@
-import java.io.InputStreamReader;
-import java.io.BufferedReader;
-import java.net.*;
-import java.io.*;
+import java.util.ArrayList;
+import java.net.InetSocketAddress;
 
-
-public class BayouServer
+public class BayouServer extends Thread
 {
-    public static void main (String args[])
-    {
-	if( args.length < 1)
-	    System.out.println("AAAHH222!!!");
-	BayouServer bs = new BayouServer();
-	bs.start(args[0], args);
-    }
+	private Communicator communicator;
 
-    public void start(String serverType, String[] args)
-    {
-	Socket cs;
-	ServerSocket ss;
-	try{
-	    if (serverType.equals("server"))
-	    {
-			Communicator c = new Communicator( 3006 );
-			c.start();
-			int i = 0;
-			while ( true )
-			{
-				Thread.currentThread().sleep( 1000 );
-				Message message = new Message( "localhost", 3007, "This is message " + i );
-				c.sendMessage( message );
-				i += 1;
-			}
-		}
-/*
-		ss = new ServerSocket(3007);
-		System.out.println("In SERVER");
-		cs= ss.accept();
-		ObjectOutputStream os = new ObjectOutputStream(cs.getOutputStream());
-		int i = 0;
-		while(true)
-		{
-		    Thread.currentThread().sleep(5000);
-		    os.writeObject("Hello " + i);
-		    i++;
-		}
-*/
+	private Database database;
 
-		else if (serverType.equals("client"))
-	    {
-			Communicator c = new Communicator( 3007 );
-			c.start();
-			int i = 0;
-			while ( true )
-			{
-				Thread.currentThread().sleep( 250 );
-				Message message = c.readMessage();
-				if ( message != null )
-					System.out.println( message.getMessage() );
-			}
-/*
-		System.out.println("IN CLIENT");
-		cs = new Socket();
-		    
-		cs.connect(new InetSocketAddress("davit.cs.utexas.edu", 3007));
-		ObjectInputStream os = new ObjectInputStream(cs.getInputStream());
-		Object o;
-		while((o=os.readObject()) != null)
-	        {
-		    System.out.println((String)(o.toString()));
-		    o = null;
-		}
-*/
-	    }
-		else if ( serverType.equals( "chat" ) )
+	private boolean performUpdates = true;
+
+	private boolean performAntiEntropy = true;
+
+	private ArrayList<InetSocketAddress> addresses =
+		new ArrayList<InetSocketAddress>();
+
+	public BayouServer( int port )
+	{
+		communicator = new Communicator( port );
+		communicator.start();
+	}
+
+	public void add( Object o )
+	{
+
+	}
+
+	public void edit( Object o )
+	{
+
+	}
+
+	public void remove( Object o )
+	{
+		
+	}
+
+	public void run()
+	{
+		while ( true )
 		{
-			int port = Integer.parseInt( args[2] );
-			Communicator c = new Communicator( port );
-			c.start();
-			String line;
-			String host = args[1];
-			BufferedReader reader = new BufferedReader( new InputStreamReader(System.in) );
-			while ( ( line = reader.readLine() ) != null )
+			try
 			{
-				Message message = new Message( host, port, line );
-				c.sendMessage( message );
-				while ( ( message = c.readMessage() ) != null )
-					System.out.println( "# " + message.getMessage() );
+				sleep( 100 );
+			}
+			catch ( InterruptedException ex )
+			{
+				//  Just ignore it
+			}
+
+			Message message;
+			while ( ( message = communicator.readMessage() ) != null )
+			{
+				//  Do whatever the message requests us to do
+				if ( message instanceof ManagerMessage )
+				{
+					/*
+					 * These are the actions for ManagerMessage.  These are
+					 * generally meta-actions useful for debugging.  A
+					 * Bayou network will work happily on its own without
+					 * any of these messages ever getting sent.
+					 */
+					ManagerMessage msg = (ManagerMessage)message;
+					switch( msg.getType() )
+					{
+						case GET_DB:
+						{
+							ManagerMessage reply = new ManagerMessage();
+							reply.setAddress( msg.getAddress() );
+							msg.makeMessage(
+								ManagerMessage.Type.DB_DUMP, database,
+								null, null );
+							communicator.sendMessage( msg );
+							break;
+						}
+						case GET_TALKING:
+						{
+							ManagerMessage reply = new ManagerMessage();
+							reply.setAddress( msg.getAddress() );
+							msg.makeMessage(
+								ManagerMessage.Type.IS_TALKING, null,
+								performAntiEntropy, null );
+							communicator.sendMessage( msg );
+							break;
+						}
+						case SET_TALKING:
+						{
+							performAntiEntropy =
+								msg.getBoolean().booleanValue();
+							break;
+						}
+						case GET_UPDATING:
+						{
+							ManagerMessage reply = new ManagerMessage();
+							reply.setAddress( msg.getAddress() );
+							msg.makeMessage(
+								ManagerMessage.Type.IS_UPDATING, null,
+								performUpdates, null );
+							communicator.sendMessage( msg );
+							break;
+						}
+						case SET_UPDATING:
+						{
+							performUpdates =
+								msg.getBoolean().booleanValue();
+							break;
+						}
+						case GET_ADDRESSES:
+						{
+							ManagerMessage reply = new ManagerMessage();
+							reply.setAddress( msg.getAddress() );
+							msg.makeMessage(
+								ManagerMessage.Type.ADDRESSES_DUMP, null,
+								null, addresses );
+							communicator.sendMessage( msg );
+							break;
+						}
+						case SET_ADDRESSES:
+						{
+							addresses = msg.getAddresses();
+							break;
+						}
+						case RETIRE:
+						{
+							break;
+						}
+					}
+				}
+				else if ( message instanceof ClientMessage )
+				{
+
+				}
 			}
 		}
 	}
-	catch(Exception e){
-	    e.printStackTrace();
+
+	public static void main( String[] args )
+	{
+		if ( args.length != 1 )
+		{
+			System.out.print( "usage: java BayouServer <port>\n" );
+			System.out.print( "       <port> - port number to listen on\n\n" );
+			System.exit( 0 );
+		}
+
+		int port = 0;
+		try
+		{
+			port = Integer.parseInt( args[0] );
+		}
+		catch ( NumberFormatException ex )
+		{
+			ex.printStackTrace();
+			System.exit( 1 );
+		}
+
+		BayouServer server = new BayouServer( port );
+		server.start();
+		try
+		{
+			server.join();
+		}
+		catch ( InterruptedException ex )
+		{
+			//  Just ignore it
+		}
 	}
-    }
 }
+
