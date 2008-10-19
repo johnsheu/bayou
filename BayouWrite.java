@@ -1,83 +1,68 @@
-import java.math.BigInteger;
-import java.util.ArrayList;
+import java.io.Serializable;
 
-public class BayouWrite implements Comparable
+public class BayouWrite implements Comparable<BayouWrite>, Serializable
 {
-    private ArrayList updates;
-    private BigInteger acceptStamp;
-    private ServerID serverID;
-    private BigInteger commitSN;
-    private String writeType;
-
-    public BayouWrite( ArrayList updates, BigInteger acceptStamp, ServerID serverID, String writeType )
-    {
-	this.updates = updates;
-	this.acceptStamp = acceptStamp;
-	this.serverID = serverID;
-	this.writeType = writeType;
-    }
-
-    public BayouWrite( ArrayList updates, BigInteger acceptStamp, ServerID serverID, String writeType, BigInteger commitSN )
-    {
-	this(updates, acceptStamp, serverID, writeType );
-	this.commitSN = commitSN;
-    }
-
-    public boolean hasCSN()
-    {
-	if( commitSN != null )
-	    return true;
-	return false;
-    }
-
-    public BigInteger getCSN()
-    {
-	return commitSN;
-    }
-
-    public BigInteger getAcceptStamp()
-    {
-	return acceptStamp;
-    }
-
-    public ServerID getServerID()
-    {
-	return serverID;
-    }
-
-    public void setCSN( BigInteger csn)
-    {
-	this.commitSN= csn;
-    }
-
-    public int compareTo( Object write )
-    {
-	int result;
-	BayouWrite otherWrite = (BayouWrite) write;
-	if( this == otherWrite )
-	    return 0;
-
-	if( otherWrite.commitSN == null && this.commitSN != null)
-	    return -1;
-	if( otherWrite.commitSN != null && this.commitSN == null)
-	    return 1;
-	if( otherWrite.commitSN != null && this.commitSN != null)
+	enum Type
 	{
-	    result = this.commitSN.compareTo( otherWrite.commitSN);
-	    if( result != 0 )
-		return result;
+		ADD,
+		EDIT,
+		DELETE,
+		CREATE,
+		RETIRE;
 	}
 
-	result = acceptStamp.compareTo(otherWrite.getAcceptStamp());
-	if( result != 0 )
-	    return result;
-	
-	return this.serverID.compareTo(otherWrite.serverID);	
+	private BayouData writeData;
+
+	private Type writeType;
+
+	private WriteID writeID;
+
+	public BayouWrite( BayouData data, Type type, WriteID id )
+	{
+		this.writeData = data;
+		this.writeType = type;
+		this.writeID = id;
+	}
+
+	public BayouData getData()
+	{
+		return writeData;
+	}
+
+	public void setData( BayouData data )
+	{
+		this.writeData = data;
+	}
+
+	public Type getType()
+	{
+		return writeType;
+	}
+
+	public void setType( Type type )
+	{
+		this.writeType = type;
+	}
+
+	public WriteID getWriteID()
+	{
+		return writeID;
+	}
+
+	public void setWriteID( WriteID id )
+	{
+		this.writeID = id;
+	}
+
+    public int compareTo( BayouWrite other )
+    {
+		return writeID.compareTo( other.writeID );
     }
 
-    /*** methods for testing ***/
-    public ServerID getSID()
-    {
-	return serverID;
-    }
+	public String toString()
+	{
+		return "<T: " + writeType + ", #: " + writeID + ", D: " +
+			writeData + ">";
+	}
 }
+
