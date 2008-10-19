@@ -74,4 +74,10 @@ public class BayouWrite implements Comparable
 	
 	return this.serverID.compareTo(otherWrite.serverID);	
     }
+
+    /*** methods for testing ***/
+    public ServerID getSID()
+    {
+	return serverID;
+    }
 }

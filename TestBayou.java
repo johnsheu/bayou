@@ -12,7 +12,8 @@ public class TestBayou
     public void start()
     {
 	testServerID();
-	testBayouWrite();
+	testBayouWriteCompareTo();
+	testBayouWriteUpdateCSN();
     }
 
     public void testServerID()
@@ -54,7 +55,7 @@ public class TestBayou
     }
 
 
-    public void testBayouWrite()
+    public void testBayouWriteCompareTo()
     {
 	ArrayList updates = new ArrayList();
 	String writeType = "update";
@@ -86,40 +87,40 @@ public class TestBayou
 	int result;
 	result = b1.compareTo( b1 );
 	if( result != 0)
-	    System.out.println( "Exception BayouWrite  1.  Result is: " + result );
+	    System.out.println( "Exception BayouWriteCompareTo  1.  Result is: " + result );
 	result = b1.compareTo( b2 );
 	if( result != 0)
-	    System.out.println( "Exception BayouWrite  2.  Result is: " + result );
+	    System.out.println( "Exception BayouWriteCompareTo  2.  Result is: " + result );
 	result = b1.compareTo( b3 );
 	if( result != -1)
-	    System.out.println( "Exception BayouWrite  3.  Result is: " + result );
+	    System.out.println( "Exception BayouWriteCompareTo  3.  Result is: " + result );
 	result = b3.compareTo( b1 );
 	if( result != 1)
-	    System.out.println( "Exception BayouWrite  4.  Result is: " + result );
+	    System.out.println( "Exception BayouWriteCompareTo  4.  Result is: " + result );
 	result = b3.compareTo( b4 );
 	if( result != -1)
-	    System.out.println( "Exception BayouWrite  5.  Result is: " + result );
+	    System.out.println( "Exception BayouWriteCompareTo  5.  Result is: " + result );
 	result = b4.compareTo( b3 );
 	if( result != 1)
-	    System.out.println( "Exception BayouWrite  6.  Result is: " + result );
+	    System.out.println( "Exception BayouWriteCompareTo  6.  Result is: " + result );
 	result = b4.compareTo( b5 );
 	if( result != -1)
-	    System.out.println( "Exception BayouWrite  7.  Result is: " + result );
+	    System.out.println( "Exception BayouWriteCompareTo  7.  Result is: " + result );
 	result = b5.compareTo( b4 );
 	if( result != 1)
-	    System.out.println( "Exception BayouWrite  8.  Result is: " + result );
+	    System.out.println( "Exception BayouWriteCompareTo  8.  Result is: " + result );
 	result = b5.compareTo( b6 );
 	if( result != 1)
-	    System.out.println( "Exception BayouWrite  9.  Result is: " + result );
+	    System.out.println( "Exception BayouWriteCompareTo  9.  Result is: " + result );
 	result = b6.compareTo( b5 );
 	if( result != -1)
-	    System.out.println( "Exception BayouWrite 10.  Result is: " + result );
+	    System.out.println( "Exception BayouWriteCompareTo 10.  Result is: " + result );
 	result = b7.compareTo( b6 );
 	if( result != -1)
-	    System.out.println( "Exception BayouWrite 11.  Result is: " + result );
+	    System.out.println( "Exception BayouWriteCompareTo 11.  Result is: " + result );
 	result = b6.compareTo( b7 );
 	if( result != 1)
-	    System.out.println( "Exception BayouWrite 12.  Result is: " + result );
+	    System.out.println( "Exception BayouWriteCompareTo 12.  Result is: " + result );
 
 	b1 = new BayouWrite( updates, as1, sid1, writeType, csn1);
 	b2 = new BayouWrite( updates, as1, sid1, writeType );
@@ -129,22 +130,22 @@ public class TestBayou
 
 	result = b1.compareTo( b2 );
 	if( result != -1)
-	    System.out.println( "Exception BayouWrite 13.  Result is: " + result );
+	    System.out.println( "Exception BayouWriteCompareTo 13.  Result is: " + result );
 	result = b2.compareTo( b1 );
 	if( result != 1)
-	    System.out.println( "Exception BayouWrite 14.  Result is: " + result );
+	    System.out.println( "Exception BayouWriteCompareTo 14.  Result is: " + result );
 	result = b2.compareTo( b3 );
 	if( result != 1)
-	    System.out.println( "Exception BayouWrite 15.  Result is: " + result );
+	    System.out.println( "Exception BayouWriteCompareTo 15.  Result is: " + result );
 	result = b3.compareTo( b2 );
 	if( result != -1)
-	    System.out.println( "Exception BayouWrite 16.  Result is: " + result );
+	    System.out.println( "Exception BayouWriteCompareTo 16.  Result is: " + result );
 	result = b2.compareTo( b4 );
 	if( result != 1)
-	    System.out.println( "Exception BayouWrite 17.  Result is: " + result );
+	    System.out.println( "Exception BayouWriteCompareTo 17.  Result is: " + result );
 	result = b4.compareTo( b2 );
 	if( result != -1)
-	    System.out.println( "Exception BayouWrite 18.  Result is: " + result );
+	    System.out.println( "Exception BayouWriteCompareTo 18.  Result is: " + result );
 
 	b1 = new BayouWrite( updates, as1, sid1, writeType );
 	b2 = new BayouWrite( updates, as1, sid2, writeType );
@@ -152,73 +153,77 @@ public class TestBayou
 
 	result = b1.compareTo( b2 );
 	if( result != -1)
-	    System.out.println( "Exception BayouWrite 19.  Result is: " + result );
+	    System.out.println( "Exception BayouWriteCompareTo 19.  Result is: " + result );
 	result = b2.compareTo( b1 );
 	if( result != 1)
-	    System.out.println( "Exception BayouWrite 20.  Result is: " + result );
+	    System.out.println( "Exception BayouWriteCompareTo 20.  Result is: " + result );
 	result = b3.compareTo( b1 );
 	if( result != 1)
-	    System.out.println( "Exception BayouWrite 21.  Result is: " + result );
+	    System.out.println( "Exception BayouWriteCompareTo 21.  Result is: " + result );
 	result = b2.compareTo( b3 );
 	if( result != -1)
-	    System.out.println( "Exception BayouWrite 22.  Result is: " + result );
+	    System.out.println( "Exception BayouWriteCompareTo 22.  Result is: " + result );
 	result = b1.compareTo( b1 );
 	if( result != 0)
-	    System.out.println( "Exception BayouWrite 21.  Result is: " + result );
+	    System.out.println( "Exception BayouWriteCompareTo 23.  Result is: " + result );
 
+	ArrayList updates1   = new ArrayList();
+	ArrayList updates2   = new ArrayList();
+	String    writeType1 = "update";
+	String    writeType2 = "add";
 	
-	/*
-	BigInteger commitSN2 = new BigInteger( "2" );
+	b1 = new BayouWrite( updates1, as1, sid1, writeType1, csn1 );
+	b2 = new BayouWrite( updates2, as1, sid1, writeType2, csn1 );
 
+	result = b1.compareTo( b2 );
+	if( result != 0)
+	    System.out.println( "Exception BayouWriteCompareTo 24.  Result is: " + result );
+	result = b2.compareTo( b1 );
+	if( result != 0)
+	    System.out.println( "Exception BayouWriteCompareTo 25.  Result is: " + result );
+    }
 
-	BigInteger csn = bw1.getCSN();
-	if( csn != null )
-	    System.out.println( "Exception 1" );
-	bw1.setCSN( commitSN1 );
-	csn = bw1.getCSN();
-	if( csn.intValue() != 1 )
-	    System.out.println( "Exception 2" );
+    public void testBayouWriteUpdateCSN()
+    {
+	BayouDB db = new BayouDB();
 
-	
-	BayouWrite bw2 = new BayouWrite( updates1, acceptStamp1, serverID1, writeType1 , commitSN2 );
-	
-	int result = bw1.compareTo( bw2 );
-	System.out.println(result);
-	if ( result > -1 )
-	    System.out.println( "Exception 3" );
-	result = bw2.compareTo( bw1 );
-	if ( result < 1 )
-	    System.out.println( "Exception 4" );
+	ArrayList updates = new ArrayList();
+	String writeType = "update";
 
-	bw1 = new BayouWrite( updates1, acceptStamp1, serverID1, writeType1 );
-	bw2 = new BayouWrite( updates1, new BigInteger("2"), serverID1, writeType1 );
-	result = bw1.compareTo( bw2 );
-	if ( result > -1 )
-	    System.out.println( "Exception 5" );
-	result = bw2.compareTo( bw1 );
-	if ( result < 1 )
-	    System.out.println( "Exception 6" );
+	BigInteger as1 = new BigInteger( "1" );
+	BigInteger as2 = new BigInteger( "2" );
+	BigInteger as3 = new BigInteger( "3" );
 
-	bw1 = new BayouWrite( updates1, acceptStamp1, serverID1, writeType1 );
-	bw2 = new BayouWrite( updates1, new BigInteger("2"), serverID2, writeType1 );
-	if ( result != 0 )
-	    System.out.println( "Exception 5" );
-	result = bw2.compareTo( bw1 );
-	if ( result != 0 )
-	    System.out.println( "Exception 6" );
-	
+	BigInteger csn1 = new BigInteger( "1" );
+	BigInteger csn2 = new BigInteger( "2" );
+	BigInteger csn3 = new BigInteger( "3" );
+	BigInteger csn4 = new BigInteger( "4" );
+	BigInteger csn5 = new BigInteger( "5" );
+	BigInteger csn6 = new BigInteger( "6" );
+	BigInteger csn7 = new BigInteger( "7" );
 
-	*/
-	
-	/*
+	ServerID sid1 = new ServerID( null, new BigInteger("1") );
+	ServerID sid2 = new ServerID( sid1, new BigInteger("2") );
+	ServerID sid3 = new ServerID( sid1, new BigInteger("3") );
 
-	public BayouWrite( ArrayList updates, BigInteger acceptStamp, ServerID serverID, String writeType );
-        public BayouWrite( ArrayList updates, BigInteger acceptStamp, ServerID serverID, String writeType, BigInteger commitSN );
-	getCNS();
-	getAcceptStamp();
-	getServerID();
-	setCNS();
-	compareTo();
-	*/
+	BayouWrite b1 = new BayouWrite( updates, as1, sid1, writeType, csn1);
+	BayouWrite b2 = new BayouWrite( updates, as2, sid1, writeType, csn2);	
+	BayouWrite b3 = new BayouWrite( updates, as1, sid2, writeType, csn3);
+	BayouWrite b5 = new BayouWrite( updates, as2, sid2, writeType, csn5);
+	BayouWrite b6 = new BayouWrite( updates, as3, sid1, writeType );
+	BayouWrite b7 = new BayouWrite( updates, as3, sid2, writeType, csn7);
+
+	db.addWrite( b1 );
+	db.addWrite( b2 );
+	db.addWrite( b3 );
+	db.addWrite( b7 );
+	db.addWrite( b5 );
+	db.addWrite( b6 );
+
+	db.printTreeSet();
+
+	db.updateCSN( sid1, as2, csn4);
+
+	db.printTreeSet();
     }
 }
