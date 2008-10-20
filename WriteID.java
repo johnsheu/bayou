@@ -2,6 +2,8 @@ import java.io.Serializable;
 
 public class WriteID implements Comparable<WriteID>, Serializable
 {
+	private static final long serialVersionUID = 1L;
+
 	private Long acceptStamp;
 
 	private ServerID serverID;
@@ -60,6 +62,31 @@ public class WriteID implements Comparable<WriteID>, Serializable
 		return serverID == null;
 	}
 
+	public boolean equals( Object o )
+	{
+		if ( this == o )
+			return true;
+		if ( o == null )
+			return false;
+
+		WriteID other = (WriteID)o;
+		if ( this.serverID == null )
+			return other.serverID == null &&
+				this.CSN.equals( other.CSN );
+		if ( other.serverID == null )
+			return false;
+		return this.acceptStamp.equals( other.acceptStamp ) &&
+			this.serverID.equals( other.serverID );
+	}
+
+	public int hashCode()
+	{
+		if ( serverID == null )
+			return CSN.hashCode();
+		else
+			return serverID.hashCode() ^ acceptStamp.hashCode();
+	}
+
 	public int compareTo( WriteID other )
 	{
 		if ( this == other )
@@ -82,8 +109,8 @@ public class WriteID implements Comparable<WriteID>, Serializable
 		int result = this.acceptStamp.compareTo( other.acceptStamp );
 		if ( result != 0 )
 			return result;
-		
-		return this.serverID.compareTo( other.serverID );
+		else
+			return this.serverID.compareTo( other.serverID );
 	}
 
 	public String toString()

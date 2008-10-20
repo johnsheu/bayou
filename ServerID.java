@@ -2,52 +2,71 @@ import java.io.Serializable;
 
 public class ServerID implements Comparable<ServerID>, Serializable
 {
+	private static final long serialVersionUID = 1L;
+
 	private Long acceptStamp;
 
-	private ServerID sid;
+	private ServerID serverID;
 
-	public ServerID( ServerID sid, Long acceptStamp )
+	//  Cache hashcode, to avoid recursive computation
+	//  Note that this relies on ServerIDs having no mutator methods
+	private int hashCode;
+
+	public ServerID( ServerID serverID, Long acceptStamp )
 	{
-		this.sid = sid;
+		this.serverID = serverID;
 		this.acceptStamp = acceptStamp;
+		this.hashCode = serverID.hashCode() ^ acceptStamp.hashCode();
 	}
 
-	public boolean equals( ServerID otherServer )
+	public boolean equals( Object o )
 	{
-		if ( otherServer == null )
-			return false;
-		if ( sid == otherServer.sid &&
-			acceptStamp.equals( otherServer.acceptStamp ) )
+		if ( this == o )
 			return true;
-		return false;
+		if ( o == null )
+			return false;
+
+		ServerID other = (ServerID)o;
+		if ( !this.acceptStamp.equals( other.acceptStamp ) )
+			return false;
+		if ( this.serverID == null )
+			return other.serverID == null;
+		if ( other.serverID == null )
+			return false;
+		return this.serverID.equals( other.serverID );
 	}
 
-	public int compareTo( ServerID otherID )
+	public int hashCode()
 	{
-		if ( this == otherID )
+		return hashCode;
+	}
+
+	public int compareTo( ServerID other )
+	{
+		if ( this == other )
 			return 0;
 
 		//  Can't forget the case when both SIDs are null
-		if ( this.sid == null )
+		if ( this.serverID == null )
 		{
-			if ( otherID.sid == null )
-				return 0;
+			if ( other.serverID == null )
+				return this.acceptStamp.compareTo( other.acceptStamp );
 			else
 				return -1;
 		}
-		else if ( otherID.sid == null )
+		else if ( other.serverID == null )
 			return 1;
 
-		int result = otherID.sid.compareTo( this.sid );
-		if ( result == 0 )
-			return this.acceptStamp.compareTo( otherID.acceptStamp );
-		else
+		int result = other.serverID.compareTo( this.serverID );
+		if ( result != 0 )
 			return result;
+		else
+			return this.acceptStamp.compareTo( other.acceptStamp );
 	}
 
 	public String toString()
 	{
-		return "<" + acceptStamp + ", " + sid + ">";
+		return "<" + acceptStamp + ", " + serverID + ">";
 	}
 }
 
