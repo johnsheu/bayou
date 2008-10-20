@@ -1,6 +1,7 @@
 import java.io.Serializable;
 
-public class BayouWrite implements Comparable<BayouWrite>, Serializable
+public class BayouWrite<Data extends Comparable<Data> & Serializable>
+	implements Comparable<BayouWrite>, Serializable
 {
 	enum Type
 	{
@@ -11,25 +12,25 @@ public class BayouWrite implements Comparable<BayouWrite>, Serializable
 		RETIRE;
 	}
 
-	private BayouData writeData;
+	private Data writeData;
 
 	private Type writeType;
 
 	private WriteID writeID;
 
-	public BayouWrite( BayouData data, Type type, WriteID id )
+	public BayouWrite( Data data, Type type, WriteID id )
 	{
 		this.writeData = data;
 		this.writeType = type;
 		this.writeID = id;
 	}
 
-	public BayouData getData()
+	public Data getData()
 	{
 		return writeData;
 	}
 
-	public void setData( BayouData data )
+	public void setData( Data data )
 	{
 		this.writeData = data;
 	}

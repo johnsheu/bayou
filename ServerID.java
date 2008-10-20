@@ -1,9 +1,10 @@
+import java.io.Serializable;
 
-
-public class ServerID implements Comparable<ServerID>
+public class ServerID implements Comparable<ServerID>, Serializable
 {
-	private ServerID sid;
 	private Long acceptStamp;
+
+	private ServerID sid;
 
 	public ServerID( ServerID sid, Long acceptStamp )
 	{
@@ -42,6 +43,11 @@ public class ServerID implements Comparable<ServerID>
 			return this.acceptStamp.compareTo( otherID.acceptStamp );
 		else
 			return result;
+	}
+
+	public String toString()
+	{
+		return "<" + acceptStamp + ", " + sid + ">";
 	}
 }
 

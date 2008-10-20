@@ -1,16 +1,16 @@
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.math.BigInteger;
 import java.net.InetSocketAddress;
+import java.io.Serializable;
 
-
-public class BayouServer extends Thread
+public class BayouServer<Data extends Comparable<Data> & Serializable>
+	extends Thread
 {
 	private ServerID serverID;
-	private BigInteger acceptStampCounter;
-	private BigInteger largestKnownCSN;
-	private HashMap<ServerID, BigInteger> versionVector;
-	private HashMap<ServerID, BigInteger> omittedVector;
+	private Long acceptStampCounter;
+	private Long largestKnownCSN;
+	private HashMap<ServerID, Long> versionVector;
+	private HashMap<ServerID, Long> omittedVector;
 
 	private Communicator communicator;
 
@@ -163,7 +163,7 @@ public class BayouServer extends Thread
 			System.exit( 1 );
 		}
 
-		BayouServer server = new BayouServer( port );
+		BayouServer<Song> server = new BayouServer<Song>( port );
 		server.start();
 		try
 		{
