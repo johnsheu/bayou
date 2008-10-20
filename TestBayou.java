@@ -1,4 +1,3 @@
-import java.math.BigInteger;
 import java.util.ArrayList;
 
 public class TestBayou
@@ -12,17 +11,17 @@ public class TestBayou
     public void start()
     {
 	testServerID();
-	testBayouWriteCompareTo();
+	//	testBayouWriteCompareTo();
 	testBayouWriteUpdateCSN();
     }
 
     public void testServerID()
     {
-	ServerID sid1 = new ServerID( null, new BigInteger( "1" ));
-	ServerID sid2 = new ServerID( sid1, new BigInteger( "2" ));
-	ServerID sid3 = new ServerID( sid1, new BigInteger( "2" ));
-	ServerID sid4 = new ServerID( sid1, new BigInteger( "3" ));
-	ServerID sid5 = new ServerID( sid2, new BigInteger( "2" ));
+	ServerID sid1 = new ServerID( null, new Long( "1" ));
+	ServerID sid2 = new ServerID( sid1, new Long( "2" ));
+	ServerID sid3 = new ServerID( sid1, new Long( "2" ));
+	ServerID sid4 = new ServerID( sid1, new Long( "3" ));
+	ServerID sid5 = new ServerID( sid2, new Long( "2" ));
 
 	int result;
 	result = sid1.compareTo( sid1 );
@@ -54,26 +53,26 @@ public class TestBayou
 	    System.out.println( "Exception ServerID 9.  Result is: " + result );
     }
 
-
+    /*
     public void testBayouWriteCompareTo()
     {
-	ArrayList updates = new ArrayList();
+	BayoutData updates = new BayouData();
 	String writeType = "update";
 
-	BigInteger as1 = new BigInteger( "1" );
-	BigInteger as2 = new BigInteger( "2" );
-	BigInteger as3 = new BigInteger( "3" );
+	Long as1 = new Long( "1" );
+	Long as2 = new Long( "2" );
+	Long as3 = new Long( "3" );
 
-	BigInteger csn1 = new BigInteger( "1" );
-	BigInteger csn2 = new BigInteger( "2" );
-	BigInteger csn3 = new BigInteger( "3" );
+	Long csn1 = new Long( "1" );
+	Long csn2 = new Long( "2" );
+	Long csn3 = new Long( "3" );
 
-	ServerID sid1 = new ServerID( null, new BigInteger("1") );
-	ServerID sid2 = new ServerID( sid1, new BigInteger("2") );
-	ServerID sid3 = new ServerID( sid1, new BigInteger("3") );
-	ServerID sid4 = new ServerID( sid2, new BigInteger("2") );
-	ServerID sid5 = new ServerID( sid2, new BigInteger("3") );
-	ServerID sid6 = new ServerID( sid2, new BigInteger("4") );
+	ServerID sid1 = new ServerID( null, new Long("1") );
+	ServerID sid2 = new ServerID( sid1, new Long("2") );
+	ServerID sid3 = new ServerID( sid1, new Long("3") );
+	ServerID sid4 = new ServerID( sid2, new Long("2") );
+	ServerID sid5 = new ServerID( sid2, new Long("3") );
+	ServerID sid6 = new ServerID( sid2, new Long("4") );
 
 
 	BayouWrite b1 = new BayouWrite( updates, as1, sid1, writeType, csn1);
@@ -182,36 +181,51 @@ public class TestBayou
 	if( result != 0)
 	    System.out.println( "Exception BayouWriteCompareTo 25.  Result is: " + result );
     }
+    */
 
     public void testBayouWriteUpdateCSN()
     {
 	BayouDB db = new BayouDB();
 
-	ArrayList updates = new ArrayList();
-	String writeType = "update";
+	BayouData updates = new BayouData();
+	BayouWrite.Type writeType = BayouWrite.Type.ADD;
 
-	BigInteger as1 = new BigInteger( "1" );
-	BigInteger as2 = new BigInteger( "2" );
-	BigInteger as3 = new BigInteger( "3" );
 
-	BigInteger csn1 = new BigInteger( "1" );
-	BigInteger csn2 = new BigInteger( "2" );
-	BigInteger csn3 = new BigInteger( "3" );
-	BigInteger csn4 = new BigInteger( "4" );
-	BigInteger csn5 = new BigInteger( "5" );
-	BigInteger csn6 = new BigInteger( "6" );
-	BigInteger csn7 = new BigInteger( "7" );
 
-	ServerID sid1 = new ServerID( null, new BigInteger("1") );
-	ServerID sid2 = new ServerID( sid1, new BigInteger("2") );
-	ServerID sid3 = new ServerID( sid1, new BigInteger("3") );
+	Long as1 = new Long( "1" );
+	Long as2 = new Long( "2" );
+	Long as3 = new Long( "3" );
 
-	BayouWrite b1 = new BayouWrite( updates, as1, sid1, writeType, csn1);
-	BayouWrite b2 = new BayouWrite( updates, as2, sid1, writeType, csn2);	
-	BayouWrite b3 = new BayouWrite( updates, as1, sid2, writeType, csn3);
-	BayouWrite b5 = new BayouWrite( updates, as2, sid2, writeType, csn5);
-	BayouWrite b6 = new BayouWrite( updates, as3, sid1, writeType );
-	BayouWrite b7 = new BayouWrite( updates, as3, sid2, writeType, csn7);
+	Long csn1 = new Long( "1" );
+	Long csn2 = new Long( "2" );
+	Long csn3 = new Long( "3" );
+	Long csn4 = new Long( "4" );
+	Long csn5 = new Long( "5" );
+	Long csn6 = new Long( "6" );
+	Long csn7 = new Long( "7" );
+
+	ServerID sid1 = new ServerID( null, new Long("1") );
+	ServerID sid2 = new ServerID( sid1, new Long("2") );
+	ServerID sid3 = new ServerID( sid1, new Long("3") );
+
+	WriteID wid1 = new WriteID( as1, sid1 );
+	wid1.setCSN( csn1 );
+	WriteID wid2 = new WriteID( as2, sid1 );
+	wid2.setCSN( csn2 );
+	WriteID wid3 = new WriteID( as1, sid2 );
+	wid3.setCSN( csn3 );
+	WriteID wid4 = new WriteID( as2, sid2);
+	wid4.setCSN( csn5 );
+	WriteID wid5 = new WriteID( as3, sid1 );
+	WriteID wid6 = new WriteID( as3, sid2 );
+	wid6.setCSN( csn7 );
+
+	BayouWrite b1 = new BayouWrite( updates, writeType, wid1 );
+	BayouWrite b2 = new BayouWrite( updates, writeType, wid2 );	
+	BayouWrite b3 = new BayouWrite( updates, writeType, wid3 );
+	BayouWrite b5 = new BayouWrite( updates, writeType, wid4 );
+	BayouWrite b6 = new BayouWrite( updates, writeType, wid5 );
+	BayouWrite b7 = new BayouWrite( updates, writeType, wid6 );
 
 	db.addWrite( b1 );
 	db.addWrite( b2 );
@@ -222,7 +236,7 @@ public class TestBayou
 
 	db.printTreeSet();
 
-	db.updateCSN( sid1, as2, csn4);
+	db.updateCSN( wid5, csn4 );
 
 	db.printTreeSet();
     }

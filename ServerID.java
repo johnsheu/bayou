@@ -1,11 +1,11 @@
-import java.math.BigInteger;
+
 
 public class ServerID implements Comparable<ServerID>
 {
 	private ServerID sid;
-	private BigInteger acceptStamp;
+	private Long acceptStamp;
 
-	public ServerID( ServerID sid, BigInteger acceptStamp )
+	public ServerID( ServerID sid, Long acceptStamp )
 	{
 		this.sid = sid;
 		this.acceptStamp = acceptStamp;

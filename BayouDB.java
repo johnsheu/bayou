@@ -29,14 +29,14 @@ public class BayouDB
 	writeLog.add(write);
     }
 
-    public void updateCSN( ServerID sid, BigInteger acceptStamp, BigInteger csn )
+    public void updateCSN( WriteID wid, Long csn )
     {
-	BayouWrite bw1 = new BayouWrite( new ArrayList(), acceptStamp, sid, "temp" );
+	BayouWrite bw1 = new BayouWrite( new BayouData(), BayouWrite.Type.EDIT, wid );
 	if( writeLog.contains( bw1 ))
 	{
 	    BayouWrite bw2 = writeLog.floor( bw1 );
 	    writeLog.remove( bw2 );
-	    bw2.setCSN( csn );
+	    bw2.getWriteID().setCSN( csn );
 	    writeLog.add( bw2 );
 	}
 	else
@@ -54,7 +54,7 @@ public class BayouDB
     public void printTreeSet()
     {
 	BayouWrite bw;
-	BigInteger bi;
+	Long bi;
 	int i;
 
 	System.out.println( "Tree Set is: " );
@@ -63,21 +63,25 @@ public class BayouDB
 	while( it.hasNext() )
 	{
 	    bw = (BayouWrite)it.next();
-	    bi = bw.getCSN();
+	    bi = bw.getWriteID().getCSN();
 	    if( bi == null )
 		i = -1;
 	    else 
 		i = bi.intValue();
+
+	    int as;
+	    Long las = bw.getWriteID().getAcceptStamp();
+	    if( las == null )
+		as = -1;
+	    else
+		as = las.intValue();
 		
 	    System.out.println( "CSN is " + i );
-	    System.out.println( "ServerID is " + bw.getSID() );
-	    System.out.println( "Accept Stamp is " + bw.getAcceptStamp().intValue() );
+	    System.out.println( "ServerID is " + bw.getWriteID().getServerID() );
+	    System.out.println( "Accept Stamp is " + as );
 	    System.out.println();
 	}
 
-	System.out.println( "Done with Tree Set\n\n\n\n" );
-	    
-	    
+	System.out.println( "Done with Tree Set\n\n\n\n" );	    
     }
-    
 }
