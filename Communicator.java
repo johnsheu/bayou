@@ -1,11 +1,12 @@
 import java.net.Socket;
 import java.net.ServerSocket;
-import java.net.SocketAddress;
-import java.net.SocketTimeoutException;
+import java.nio.channels.ServerSocketChannel;
+import java.net.InetSocketAddress;
+import java.nio.channels.ClosedByInterruptException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.IOException;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * A class which handles asynchronous socket I/O.  This class sends and
@@ -20,75 +21,61 @@ public class Communicator
 	 */
 	private class SenderThread extends Thread
 	{
-		private volatile boolean active = false;
-
+		//  The port to send to
 		private int port = -1;
 
 		public SenderThread( int port )
 		{
-			//  Java VM should not wait for thread to die naturally
 			this.port = port;
-			setDaemon( true );
-		}
-
-		//  Set active state
-		public synchronized void setActive( boolean active )
-		{
-			if ( this.active )
-			{
-				if ( active )
-					return;
-				this.active = false;
-			}
-			else
-			{
-				if ( !active )
-					return;
-				this.active = true;
-				start();
-			}
-		}
-
-		public synchronized boolean isActive()
-		{
-			return active;
 		}
 
 		public void run()
 		{
-			while ( active )
+			//  Java VM should not wait for thread to die naturally
+			setDaemon( true );
+
+			while ( !isInterrupted() )
 			{
-				//  Send all messages in queue
-				while ( !senderQueue.isEmpty() )
+				Message message = null;
+
+				//  Wait for message to send
+				try
 				{
-					Message message = senderQueue.poll();
+					message = senderQueue.take();
+				}
+				catch ( InterruptedException ex )
+				{
+					return;
+				}
+
+				//  Try sending it
+				Socket socket = new Socket();
+				try
+				{
+					socket.connect( message.getAddress() );
+					ObjectOutputStream oos =
+						new ObjectOutputStream( socket.getOutputStream() );
+					message.setAddress( socket.getLocalAddress(), port );
+					oos.writeObject( message );
+				}
+				catch ( IOException ex )
+				{
+					ex.printStackTrace();
+					ErrorMessage emessage = new ErrorMessage();
+					emessage.setAddress( message.getAddress() );
+					emessage.setError( ex.toString() );
+					receiverQueue.offer( emessage );
+				}
+				finally
+				{
 					try
 					{
-						Socket socket = new Socket();
-						socket.connect( message.getAddress() );
-						ObjectOutputStream oos =
-							new ObjectOutputStream( socket.getOutputStream() );
-						message.setAddress( socket.getLocalAddress(), port );
-						oos.writeObject( message );
+						socket.close();
 					}
 					catch ( IOException ex )
 					{
 						ex.printStackTrace();
-						ErrorMessage emessage = new ErrorMessage();
-						emessage.setAddress( message.getAddress() );
-						emessage.setError( ex.toString() );
-						receiverQueue.offer( emessage );
 					}
-				}
-
-				//  Sleep until next poll or interruption
-				try
-				{
-					sleep( 50 );
-				}
-				catch ( InterruptedException ex )
-				{
-					//  No stack trace here, normal operation
 				}
 			}
 		}
@@ -99,69 +86,60 @@ public class Communicator
 	 */
 	private class ReceiverThread extends Thread
 	{
-		private volatile boolean active = false;
-
-		private ServerSocket ssocket = null;
+		//  The port to listen on
+		private int port = -1;
 
 		public ReceiverThread( int port )
 		{
-			//  Java VM should not wait for thread to die naturally
-			setDaemon( true );
-
-			try
-			{
-				ssocket = new ServerSocket( port );
-				//  100-millisecond polling
-				ssocket.setSoTimeout( 50 );
-			}
-			catch ( IOException ex )
-			{
-				ex.printStackTrace();
-			}
-		}
-
-		//  Set active state
-		public synchronized void setActive( boolean active )
-		{
-			if ( this.active )
-			{
-				if ( active )
-					return;
-				this.active = false;
-			}
-			else
-			{
-				if ( !active )
-					return;
-				this.active = true;
-				start();
-			}
-		}
-
-		public synchronized boolean isActive()
-		{
-			return active;
+			this.port = port;
 		}
 
 		public void run()
 		{
-			while( active )
+			//  Java VM should not wait for thread to die naturally
+			setDaemon( true );
+
+			//  Socket setup
+			ServerSocketChannel sschannel = null;
+			try
 			{
+				sschannel = ServerSocketChannel.open();
+				sschannel.configureBlocking( true );
+				sschannel.socket().bind( new InetSocketAddress( port ) );
+			}
+			catch ( IOException ex )
+			{
+				ex.printStackTrace();
+				return;
+			}
+
+			while ( !isInterrupted() )
+			{
+				Socket socket = null;
+
+				//  Wait for connection
 				try
 				{
-					Socket socket = ssocket.accept();
-					if ( socket != null )
-					{
-						ObjectInputStream oos =
-							new ObjectInputStream( socket.getInputStream() );
-						Object o = oos.readObject();
-						Message m = (Message)o;
-						receiverQueue.offer( (Message)o );
-					}
+					socket = sschannel.accept().socket();
 				}
-				catch ( SocketTimeoutException ex )
+				catch ( ClosedByInterruptException ex )
 				{
-					//  No stack trace, normal operation
+					return;
+				}
+				catch ( IOException ex )
+				{
+					ex.printStackTrace();
+					continue;
+				}
+
+				//  Pull data off connection
+				try
+				{
+					ObjectInputStream oos =
+						new ObjectInputStream( socket.getInputStream() );
+					Object o = oos.readObject();
+					Message m = (Message)o;
+					receiverQueue.offer( (Message)o );
 				}
 				catch ( IOException ex )
 				{
@@ -171,15 +149,29 @@ public class Communicator
 				{
 					ex.printStackTrace();
 				}
+				finally
+				{
+					try
+					{
+						socket.close();
+					}
+					catch ( IOException ex )
+					{
+						ex.printStackTrace();
+					}
+				}
 			}
 		}
 	}
 
+	//  The port to listen on
+	int port = -1;
+
 	//  Message receive queue
-	ConcurrentLinkedQueue<Message> receiverQueue = null;
+	LinkedBlockingQueue<Message> receiverQueue = null;
 
 	//  Message send queue
-	ConcurrentLinkedQueue<Message> senderQueue = null;
+	LinkedBlockingQueue<Message> senderQueue = null;
 
 	//  Message receive thread
 	ReceiverThread receiver = null;
@@ -189,10 +181,9 @@ public class Communicator
 
 	public Communicator( int port )
 	{
-		receiverQueue = new ConcurrentLinkedQueue<Message>();
-		senderQueue = new ConcurrentLinkedQueue<Message>();
-		receiver = new ReceiverThread( port );
-		sender = new SenderThread( port );
+		this.port = port;
+		receiverQueue = new LinkedBlockingQueue<Message>();
+		senderQueue = new LinkedBlockingQueue<Message>();
 	}
 
 	/**
@@ -224,6 +215,20 @@ public class Communicator
 	}
 
 	/**
+	 * Read a message using this <code>Communicator</code>, blocking until
+	 * a message is available.  The message is read and removed from the
+	 * message queue, blocking if empty.
+	 *
+	 * @return  the {@link Message} at the front of t, blocking if empty.)
+	 * 
+	 * @throws InterruptedException if interrupted while waiting
+	 */
+	public Message readMessageBlocking() throws InterruptedException
+	{
+		return receiverQueue.poll();
+	}
+
+	/**
 	 * Peek at a message using this <code>Communicator</code>.  The message
 	 * is read from the message queue, but not removed.  If the queue is
 	 * empty, it returns <code>null</code>.
@@ -239,10 +244,16 @@ public class Communicator
 	/**
 	 * Start the asynchronous I/O threads for this <code>Communicator</code>.
 	 */
-	public void start()
+	public synchronized void start()
 	{
-		receiver.setActive( true );
-		sender.setActive( true );
+		if ( receiver != null )
+			return;
+
+		receiver = new ReceiverThread( port );
+		sender = new SenderThread( port );
+
+		receiver.start();
+		sender.start();
 	}
 
 	/**
@@ -250,10 +261,31 @@ public class Communicator
 	 * While stopped, no I/O will occur, but message received up to this
 	 * point can still be retrieved from the queue.
 	 */ 
-	public void stop()
+	public synchronized void stop()
 	{
-		receiver.setActive( false );
-		sender.setActive( false );
+		if ( receiver == null )
+			return;
+
+		receiver.interrupt();
+		sender.interrupt();
+
+		try
+		{
+			receiver.join();
+		}
+		catch ( InterruptedException ex )
+		{
+
+		}
+
+		try
+		{
+			sender.join();
+		}
+		catch ( InterruptedException ex )
+		{
+
+		}
 	}
 
 	/**
@@ -262,9 +294,9 @@ public class Communicator
 	 * @return  <code>true</code> if the I/O threads are running,
 	 *          <code>false</code> otherwise
 	 */
-	public boolean isStarted()
+	public synchronized boolean isStarted()
 	{
-		return receiver.isActive();
+		return receiver != null;
 	}
 }
 
