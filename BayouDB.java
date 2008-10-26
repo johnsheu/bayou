@@ -9,25 +9,30 @@ import java.util.SortedSet;
 public class BayouDB
 {
     private TreeSet<BayouWrite> writeLog;
-    private HashMap playList;
-
+    private Playlist playlist;
+    private boolean modified;
+    
+    
     public BayouDB()
     {
 	writeLog = new TreeSet<BayouWrite>();
-	playList = new HashMap();
+	playlist = new Playlist();
+	modified = true;
     }
 
     public HashMap rollBack( HashMap<ServerID, BigInteger> versionVector )
     {
 	/*stub*/
+    modified = true;
 	return new HashMap();
     }
 
     public void addWrite( BayouWrite write )
     {
 	/*** update the playlist here ***/
-
+    
 	writeLog.add(write);
+    modified = true;
     }
 
     public void updateCSN( WriteID wid, Long csn )
@@ -41,7 +46,8 @@ public class BayouDB
 	    writeLog.add( bw2 );
 	}
 	else
-	    System.out.println( "ZOMG YOU SHOULD NOT BE HERE" );	
+	    System.out.println( "ZOMG YOU SHOULD NOT BE HERE" );
+	modified = true;
     }
 
     public TreeSet<BayouWrite> getUpdateList( HashMap<ServerID, Long> sendVersionVector, Long sendCSN, HashMap<ServerID, Long> recvVersionVector, Long recvCSN )
@@ -100,9 +106,42 @@ public class BayouDB
 	}
         return updates;
     }
+    
+    public Playlist getPlaylist(){
+    	if(modified)
+    		renderPlaylist();
+    	return playlist;
+    }
 
+    //Renders a new Playlist from the current writeLog. 
+    //WILL NOT WORK YET.  SEE PROBLEMS BELOW.
+    private void renderPlaylist() {
+    	playlist = new Playlist();
+    	
+    	//This probably won't iterate in the right order.  Need a list, I assume.
+    	for(BayouWrite write : writeLog){
+    		write = (BayouWrite<Song>) write; //Why doesn't this fix the need to cast each object from getData()?
+    		switch(write.getType()){
+    		case ADD: 
+    			Song songToAdd = (Song) write.getData(); //Is it okay to cast all "data" objects to songs?  I'm just assuming that, that's what they are...
+    			playlist.put(songToAdd.getName(), songToAdd.getURL());
+    			break;
+    		case EDIT: 
+    			Song songToEdit = (Song) write.getData();
+    			playlist.put(songToEdit.getName(), songToEdit.getURL());
+    			break;
+    		case DELETE: 
+    			Song songToRemove = (Song) write.getData();
+    			playlist.remove(songToRemove.getName());
+    			break;
+    		default: break; //Type is CREATE or RETIRE, which don't matter here.
+    		}
+    	}
+    	
+    	modified = false;
+    }
 
-    /*** methods for testing purposes only ***/
+	/*** methods for testing purposes only ***/
     public void printTreeSet()
     {
 	BayouWrite bw;

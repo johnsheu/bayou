@@ -85,17 +85,17 @@ public class TestBayouClient extends BayouClient{
 		addSong(m_song);
 		m_song.setURL("http://www.newurl.com/");
 		modifySong(m_song);
-		assert getPlaylist().get(m_song.getTitle()).equals(m_song.getURL());
+		assert getPlaylist().get(m_song.getName()).equals(m_song.getURL());
 		
 		//remove nonexistent song
 		m_song = createRandomSong();
 		removeSong(m_song);
-		assert !getPlaylist().containsKey(m_song.getTitle());
+		assert !getPlaylist().containsKey(m_song.getName());
 		
 		//change nonexistent song (should return error flag)
 		m_song = createRandomSong();
 		modifySong(m_song);
-		assert !getPlaylist().containsKey(m_song.getTitle());
+		assert !getPlaylist().containsKey(m_song.getName());
 	}
 
 	//TODO :: Not very stressful yet.  Remove/lower sleep() time after basic functionality is okay.

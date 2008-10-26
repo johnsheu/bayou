@@ -68,7 +68,7 @@ public class BayouClient{
 
 	public void addSong(Song song){}
     public void removeSong(String title){}
-    public void removeSong(Song song){removeSong(song.getTitle());}
+    public void removeSong(Song song){removeSong(song.getName());}
     public void modifySong(Song song){}
 
     //TODO :: Implement on BayouServer

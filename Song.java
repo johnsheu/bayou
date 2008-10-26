@@ -2,35 +2,37 @@ import java.io.Serializable;
 
 public class Song implements Serializable, Comparable<Song>
 {
-	private String song;
+	private String name;
 
 	private String url;
 
 	public Song()
 	{
-		song = "";
+		name = "";
 		url = "";
 	}
 
-	public Song( String song, String url )
+	public Song( String name, String url )
 	{
-		this.song = song;
+		this.name = name;
 		this.url = url;
 	}
 
-	public void setSong( String song )
+	public Song setName( String song )
 	{
-		this.song = song;
+		this.name = song;
+		return this;
 	}
 
-	public String getSong()
+	public String getName()
 	{
-		return song;
+		return name;
 	}
 
-	public void setURL( String url )
+	public Song setURL( String url )
 	{
 		this.url = url;
+		return this;
 	}
 
 	public String getURL()
@@ -49,16 +51,16 @@ public class Song implements Serializable, Comparable<Song>
 
 	public int hashCode()
 	{
-		return song.hashCode();
+		return name.hashCode();
 	}
 
 	public int compareTo( Song song )
 	{
-		int result = this.song.compareTo( song.song );
+		int result = this.name.compareTo( song.name );
 		if ( result != 0 )
 			return result;
 
-		if ( this.url.equals( "*" ) || song.url.equals( "*" ) )
+		if ( this.url.equals( "*" ) || song.url.equals( "*" ) ) //Allows for a "wildcard" as a URL.
 			return 0;
 
 		return this.url.compareTo( song.url );
