@@ -1,5 +1,5 @@
 import java.util.Random;
-
+import java.util.Scanner;
 
 public class TestBayouClient extends BayouClient{
 	
@@ -113,7 +113,7 @@ public class TestBayouClient extends BayouClient{
 	}
 	
 	public TestBayouClient(int port){
-		super(port);
+		super(port, new Scanner(System.in));
 	}
 	
 }
