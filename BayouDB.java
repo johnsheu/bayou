@@ -3,6 +3,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.TreeSet;
+import java.util.SortedSet;
 
 
 public class BayouDB
@@ -43,10 +44,61 @@ public class BayouDB
 	    System.out.println( "ZOMG YOU SHOULD NOT BE HERE" );	
     }
 
-    public ArrayList getUpdateList( HashMap<ServerID, BigInteger> versionVector )
+    public TreeSet<BayouWrite> getUpdateList( HashMap<ServerID, Long> sendVersionVector, Long sendCSN, HashMap<ServerID, Long> recvVersionVector, Long recvCSN )
     {
 	/*stub*/
-	return new ArrayList();
+        /*Note: Changes in the returned set are reflected in this set*/
+
+        Iterator<ServerID> servers = sendVersionVector.keySet().iterator();
+
+        TreeSet<BayouWrite> updates = new TreeSet<BayouWrite>();
+
+        //KAREN - handle case with CSN
+        if( sendCSN.compareTo( recvCSN ) > 0 )
+	{
+	    
+	}
+
+        WriteID firstUncommittedWID = new WriteID( new Long( 0 ), new ServerID( null, new Long( 0 )));
+        BayouWrite firstUncommitted = new BayouWrite( new BayouData(), BayouWrite.Type.EDIT, firstUncommittedWID );
+        TreeSet<BayouWrite> uncommittedWrites = new TreeSet<BayouWrite>( writeLog.tailSet( firstUncommitted ));
+
+	BayouWrite write;
+	Long writeAcceptStamp;
+	Long sendAcceptStamp;
+	Long recvAcceptStamp;
+	ServerID writeServer;
+	ServerID server;
+	Iterator<BayouWrite> writes;
+	boolean aboveRange;
+        while( servers.hasNext() )
+	{
+		server = servers.next();
+
+		aboveRange = true;
+		writes = uncommittedWrites.descendingIterator();
+		while( writes.hasNext() && aboveRange )
+		{
+		    write = writes.next();
+		    writeAcceptStamp = write.getWriteID().getAcceptStamp();
+		    sendAcceptStamp  = sendVersionVector.get( server );
+		    recvAcceptStamp  = recvVersionVector.get( server );
+		    
+		    if( writeAcceptStamp > recvAcceptStamp )
+		    {
+			writeServer = write.getWriteID().getServerID() ;
+			if( writeAcceptStamp < sendAcceptStamp && server.equals( writeServer ))
+			{
+			    updates.add( write );
+			    aboveRange = false;
+			}
+		    }
+		    else
+			aboveRange = false;
+		}
+
+	}
+        return updates;
     }
 
 
