@@ -1,4 +1,3 @@
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
@@ -90,10 +89,10 @@ public class BayouServer<K, V>
 							{
 								ManagerMessage reply = new ManagerMessage();
 								reply.setAddress( msg.getAddress() );
-								msg.makeMessage(
+								reply.makeMessage(
 									ManagerMessage.Type.ADDRESSES_DUMP, null,
 									null, addresses );
-								communicator.sendMessage( msg );
+								communicator.sendMessage( reply );
 								break;
 							}
 							case SET_ADDRESSES:
@@ -107,141 +106,227 @@ public class BayouServer<K, V>
 							}
 						}
 					}
-					else if ( message instanceof ClientMessage )
+					else if ( message instanceof BayouAERequest )
 					{
-
+						BayouAERequest msg = (BayouAERequest)message;
+						BayouAEResponse<K, V> reply = database.getUpdates( msg );
+						reply.setAddress( msg.getAddress() );
+						communicator.sendMessage( reply );
+					}
+					else if ( message instanceof BayouAEResponse<?, ?> )
+					{
+						BayouAEResponse<K, V> msg = (BayouAEResponse<K, V>)message;
+						database.applyUpdates( msg );
 					}
 				}
 			}
 		}
 	}
 
-	private ServerID serverID;
-	private Long acceptStampCounter;
-	private Long largestKnownCSN;
-	private HashMap<ServerID, Long> omittedVector;
-
-	private Communicator communicator;
+	private Communicator communicator = null;
 
 	private BayouServerThread serverThread = null;
 
-	private BayouDB<K, V> database;
+	private BayouDB<K, V> database = null;
 
 	private boolean performUpdates = true;
 
 	private boolean performAntiEntropy = true;
 
-	private ArrayList<InetSocketAddress> addresses =
-		new ArrayList<InetSocketAddress>();
+	private ArrayList<InetSocketAddress> addresses = null;
 
-	private HashMap<ServerID, WriteID> versionVector;
-	
+	private ServerID serverID = null;
+
 	public BayouServer( int port )
 	{
 		database = new BayouDB<K, V>();
 		communicator = new Communicator( port );
+		addresses = new ArrayList<InetSocketAddress>();
 	}
 
 	public BayouServer( int port, int initialCapacity )
 	{
 		database = new BayouDB<K, V>( initialCapacity );
 		communicator = new Communicator( port );
+		addresses = new ArrayList<InetSocketAddress>();
 	}
 
 	public BayouServer( int port, int initialCapacity, float loadFactor )
 	{
 		database = new BayouDB<K, V>( initialCapacity, loadFactor );
 		communicator = new Communicator( port );
+		addresses = new ArrayList<InetSocketAddress>();
 	}
 
-	public synchronized void start()
+	public void start()
 	{
-		if ( serverThread != null )
-			return;
-
-		communicator.start();
-
-		serverThread = new BayouServerThread();
-		serverThread.start();
-	}
-
-	public synchronized void stop()
-	{
-		if ( serverThread == null )
-			return;
-
-		serverThread.interrupt();
-
-		communicator.stop();
-
-		try
+		synchronized( communicator )
 		{
-			serverThread.join();
-		}
-		catch ( InterruptedException ex )
-		{
+			if ( serverThread != null )
+				return;
 
+			communicator.start();
+
+			serverThread = new BayouServerThread();
+			serverThread.start();
 		}
 	}
 
-	public synchronized boolean isStarted()
+	public void stop()
 	{
-		return serverThread != null;
+		synchronized( communicator )
+		{
+			if ( serverThread == null )
+				return;
+
+			serverThread.interrupt();
+
+			communicator.stop();
+
+			try
+			{
+				serverThread.join();
+			}
+			catch ( InterruptedException ex )
+			{
+
+			}
+		}
 	}
 
-	public boolean add( K key, V value )
+	public boolean isStarted()
 	{
-		return false;
+		synchronized( communicator )
+		{
+			return serverThread != null;
+		}
 	}
 
-	public V put( K key, V value )
-	{
-		return null;
-	}
+	/*
+	 * START Bayou API
+	 */
 
-	public V get( K key )
+	public void create()
 	{
-		return null;
-	}
-
-	public Map<K, V> getAll()
-	{
-		return null;
-	}
-
-	public int size()
-	{
-		return 0;
-	}
-
-	public boolean edit( K key, V value )
-	{
-		return false;
-	}
-
-	public V remove( K key )
-	{
-		return null;
-	}
-
-	void clear()
-	{
-
+		synchronized( database )
+		{
+			if ( serverID != null )
+				return;
+			//  Do stuff
+		}
 	}
 
 	public void retire()
 	{
-
+		synchronized( database )
+		{
+			if ( serverID == null )
+				return;
+			//  Do stuff
+		}
 	}
 
-	public List<InetSocketAddress> getAddressList()
+	public boolean isCreated()
 	{
-		return addresses;
+		synchronized( database )
+		{
+			return serverID != null;
+		}
 	}
 
-	public void setAddressList( List<InetSocketAddress> list )
+	public void add( K key, V value )
 	{
-		addresses = new ArrayList<InetSocketAddress>( list );
+		synchronized( database )
+		{
+			if ( serverID == null )
+				return;
+			if ( !performUpdates )
+				return;
+			BayouWrite<K, V> write = new BayouWrite<K, V>(
+				key, value, BayouWrite.Type.ADD,
+				new WriteID( Long.MAX_VALUE, serverID ) );
+			database.addWrite( write );
+		}
+	}
+
+	public void edit( K key, V value )
+	{
+		synchronized( database )
+		{
+			if ( serverID == null )
+				return;
+			if ( !performUpdates )
+				return;
+			BayouWrite<K, V> write = new BayouWrite<K, V>(
+				key, value, BayouWrite.Type.EDIT,
+				new WriteID( Long.MAX_VALUE, serverID ) );
+			database.addWrite( write );
+		}
+	}
+
+	public V get( K key )
+	{
+		synchronized( database )
+		{
+			if ( serverID == null )
+				return null;
+			return database.getMap().get( key );
+		}
+	}
+
+	public Map<K, V> getAll()
+	{
+		synchronized( database )
+		{
+			if ( serverID == null )
+				return null;
+			return database.getMap();
+		}
+	}
+
+	public void remove( K key )
+	{
+		synchronized( database )
+		{
+			if ( serverID == null )
+				return;
+			if ( !performUpdates )
+				return;
+			BayouWrite<K, V> write = new BayouWrite<K, V>(
+				key, null, BayouWrite.Type.DELETE,
+				new WriteID( Long.MAX_VALUE, serverID ) );
+			database.addWrite( write );
+		}
+	}
+
+	/*
+	 * END Bayou API
+	 */
+
+	public int size()
+	{
+		synchronized( database )
+		{
+			if ( serverID == null )
+				return 0;
+			return database.getMap().size();
+		}
+	}
+
+	public ArrayList<InetSocketAddress> getAddressList()
+	{
+		synchronized( addresses )
+		{
+			return (ArrayList<InetSocketAddress>)( addresses.clone() );
+		}
+	}
+
+	public void setAddressList( ArrayList<InetSocketAddress> addresses )
+	{
+		synchronized( this.addresses )
+		{
+			this.addresses = (ArrayList<InetSocketAddress>)( addresses.clone() );
+		}
 	}
 
 

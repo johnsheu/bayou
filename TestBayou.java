@@ -57,7 +57,7 @@ public class TestBayou
 
     public void testBayouWrite()
     {
-	Song update = new Song();
+	String up1 = "", up2 = "";
 	BayouWrite.Type writeType = BayouWrite.Type.EDIT;
 
 	ServerID sid1 = new ServerID( null, 1L );
@@ -74,12 +74,13 @@ public class TestBayou
 	WriteID as3 = new WriteID( 1L, sid3 );
 	WriteID as4 = new WriteID( 2L, sid3 );
 
-	BayouWrite<Song> b1 = new BayouWrite<Song>( update, writeType, csn1 );
-	BayouWrite<Song> b2 = new BayouWrite<Song>( update, writeType, csn2 );
-	BayouWrite<Song> b3 = new BayouWrite<Song>( update, writeType, as1 );
-	BayouWrite<Song> b4 = new BayouWrite<Song>( update, writeType, as2 );
-	BayouWrite<Song> b5 = new BayouWrite<Song>( update, writeType, as3 );
-	BayouWrite<Song> b6 = new BayouWrite<Song>( update, writeType, as4 );
+	BayouWrite<String,String>
+		b1 = new BayouWrite<String,String>( up1, up2, writeType, csn1 ),
+		b2 = new BayouWrite<String,String>( up1, up2, writeType, csn2 ),
+		b3 = new BayouWrite<String,String>( up1, up2, writeType, as1 ),
+		b4 = new BayouWrite<String,String>( up1, up2, writeType, as2 ),
+		b5 = new BayouWrite<String,String>( up1, up2, writeType, as3 ),
+		b6 = new BayouWrite<String,String>( up1, up2, writeType, as4 );
 
 	int result;
 	result = b1.compareTo( b1 );

@@ -1,57 +1,52 @@
-import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.TreeSet;
+import java.util.Iterator;
+import java.io.Serializable;
 import java.util.SortedSet;
 
+import java.util.ArrayList;
 
-public class BayouDB
+public class BayouDB<K, V> implements Serializable
 {
-    private TreeSet<BayouWrite> writeLog;
-    private Playlist playlist;
-    private boolean modified;
-    
-    
-    public BayouDB()
-    {
-	writeLog = new TreeSet<BayouWrite>();
-	playlist = new Playlist();
-	modified = true;
-    }
+    private HashMap<K, V> writeData;
+	private TreeSet<BayouWrite<K, V>> writeLog;
+	private LinkedList<BayouWrite<K, V>> undoLog;
 
-    public HashMap rollBack( HashMap<ServerID, BigInteger> versionVector )
-    {
-	/*stub*/
-    modified = true;
-	return new HashMap();
-    }
+	private HashMap<ServerID, Long> versionVector;
+	private HashMap<ServerID, Long> omittedVector;
+	private long CSN;
+	private long OSN;
 
-    public void addWrite( BayouWrite write )
-    {
-	/*** update the playlist here ***/
+	private boolean modified;
     
-	writeLog.add(write);
-    modified = true;
-    }
-
-    public void updateCSN( WriteID wid, Long csn )
-    {
-	BayouWrite bw1 = new BayouWrite( new BayouData(), BayouWrite.Type.EDIT, wid );
-	if( writeLog.contains( bw1 ))
+	public BayouDB()
 	{
-	    BayouWrite bw2 = writeLog.floor( bw1 );
-	    writeLog.remove( bw2 );
-	    bw2.getWriteID().setCSN( csn );
-	    writeLog.add( bw2 );
+		writeData = new HashMap<K, V>();
+		writeLog = new TreeSet<BayouWrite<K, V>>();
+		undoLog = new LinkedList<BayouWrite<K, V>>();
+		modified = true;
 	}
-	else
-	    System.out.println( "ZOMG YOU SHOULD NOT BE HERE" );
-	modified = true;
-    }
 
-    public TreeSet<BayouWrite> getUpdateList( HashMap<ServerID, Long> sendVersionVector, Long sendCSN, HashMap<ServerID, Long> recvVersionVector, Long recvCSN )
-    {
+	public BayouDB( int initialCapacity )
+	{
+		writeData = new HashMap<K, V>( initialCapacity );
+		writeLog = new TreeSet<BayouWrite<K, V>>();
+		undoLog = new LinkedList<BayouWrite<K, V>>();
+		modified = true;
+	}
+
+	public BayouDB( int initialCapacity, float loadFactor )
+	{
+		writeData = new HashMap<K, V>( initialCapacity, loadFactor );
+		writeLog = new TreeSet<BayouWrite<K, V>>();
+		undoLog = new LinkedList<BayouWrite<K, V>>();
+		modified = true;
+	}
+
+	public BayouAEResponse<K, V> getUpdates( BayouAERequest request )
+	{
+		BayouAEResponse<K, V> response = new BayouAEResponse<K, V>();
 	/*stub*/
         /*Note: Changes in the returned set are reflected in this set*/
 
@@ -66,7 +61,7 @@ public class BayouDB
 	}
 
         WriteID firstUncommittedWID = new WriteID( new Long( 0 ), new ServerID( null, new Long( 0 )));
-        BayouWrite firstUncommitted = new BayouWrite( new BayouData(), BayouWrite.Type.EDIT, firstUncommittedWID );
+        BayouWrite firstUncommitted = new BayouWrite( "", "", BayouWrite.Type.EDIT, firstUncommittedWID );
         TreeSet<BayouWrite> uncommittedWrites = new TreeSet<BayouWrite>( writeLog.tailSet( firstUncommitted ));
 
 	BayouWrite write;
@@ -105,42 +100,58 @@ public class BayouDB
 
 	}
         return updates;
-    }
+
+	}
+
+	public void applyUpdates( BayouAEResponse<K, V> updates )
+	{
+
+	}
+
+	public void addWrite( BayouWrite<K, V> write )
+	{
+		writeLog.add( write );
+		//  Do write-apply heuristics here
+	}
+
+	public HashMap<K, V> getMap()
+	{
+		HashMap<K, V> entries = (HashMap<K, V>)writeData.clone();
+		Iterator<BayouWrite<K, V>> iter = writeLog.iterator();
+		while ( iter.hasNext() )
+		{
+			applyWrite( iter.next(), entries );
+			//  Uncomment to get the apply-writes-on-render semantics
+			//iter.remove();
+		}
+		return entries;
+	}
+
+	private boolean applyWrite( BayouWrite<K, V> write, HashMap<K, V> data )
+	{
+		switch( write.getType() )
+		{
+			case ADD:
+				if ( data.containsKey( write.getKey() ) )
+					return false;
+				data.put( write.getKey(), write.getValue() );
+				break;
+			case EDIT:
+				if ( !data.containsKey( write.getKey() ) )
+					return false;
+				data.put( write.getKey(), write.getValue() );
+				break;
+			case DELETE:
+				if ( !data.containsKey( write.getKey() ) )
+					return false;
+				data.remove( write.getKey() );
+				break;
+			default:
+				return false;
+		}
+		return true;
+	}
     
-    public Playlist getPlaylist(){
-    	if(modified)
-    		renderPlaylist();
-    	return playlist;
-    }
-
-    //Renders a new Playlist from the current writeLog. 
-    //WILL NOT WORK YET.  SEE PROBLEMS BELOW.
-    private void renderPlaylist() {
-    	playlist = new Playlist();
-    	
-    	//This probably won't iterate in the right order.  Need a list, I assume.
-    	for(BayouWrite write : writeLog){
-    		write = (BayouWrite<Song>) write; //Why doesn't this fix the need to cast each object from getData()?
-    		switch(write.getType()){
-    		case ADD: 
-    			Song songToAdd = (Song) write.getData(); //Is it okay to cast all "data" objects to songs?  I'm just assuming that, that's what they are...
-    			playlist.put(songToAdd.getName(), songToAdd.getURL());
-    			break;
-    		case EDIT: 
-    			Song songToEdit = (Song) write.getData();
-    			playlist.put(songToEdit.getName(), songToEdit.getURL());
-    			break;
-    		case DELETE: 
-    			Song songToRemove = (Song) write.getData();
-    			playlist.remove(songToRemove.getName());
-    			break;
-    		default: break; //Type is CREATE or RETIRE, which don't matter here.
-    		}
-    	}
-    	
-    	modified = false;
-    }
-
 	/*** methods for testing purposes only ***/
     public void printTreeSet()
     {
@@ -175,4 +186,20 @@ public class BayouDB
 
 	System.out.println( "Done with Tree Set\n\n\n\n" );	    
     }
+
+
+    public void updateCSN( WriteID wid, Long csn )
+    {
+	BayouWrite bw1 = new BayouWrite( "", "", BayouWrite.Type.EDIT, wid );
+	if( writeLog.contains( bw1 ))
+	{
+	    BayouWrite bw2 = writeLog.floor( bw1 );
+	    writeLog.remove( bw2 );
+	    bw2.getWriteID().setCSN( csn );
+	    writeLog.add( bw2 );
+	}
+	else
+	    System.out.println( "ZOMG YOU SHOULD NOT BE HERE" );
+    }
+
 }

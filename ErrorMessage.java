@@ -8,6 +8,9 @@ import java.io.Serializable;
  */
 public class ErrorMessage extends Message implements Serializable
 {
+	//  Recommended for Serializable
+	private static final long serialVersionUID = 1L;
+
 	//  The error message.
 	private String error;
 

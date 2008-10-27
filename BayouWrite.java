@@ -1,8 +1,9 @@
 import java.io.Serializable;
 
-public class BayouWrite<Data extends Comparable<Data> & Serializable>
-	implements Comparable<BayouWrite>, Serializable
+public class BayouWrite<K, V> implements Comparable<BayouWrite>, Serializable
 {
+	public static final long serialVersionUID = 1L;
+
 	enum Type
 	{
 		ADD,
@@ -12,27 +13,40 @@ public class BayouWrite<Data extends Comparable<Data> & Serializable>
 		RETIRE;
 	}
 
-	private Data writeData;
+	private K writeKey;
+
+	private V writeValue;
 
 	private Type writeType;
 
 	private WriteID writeID;
 
-	public BayouWrite( Data data, Type type, WriteID id )
+	public BayouWrite( K key, V value, Type type, WriteID id )
 	{
-		this.writeData = data;
+		this.writeKey = key;
+		this.writeValue = value;
 		this.writeType = type;
 		this.writeID = id;
 	}
 
-	public Data getData()
+	public K getKey()
 	{
-		return writeData;
+		return writeKey;
 	}
 
-	public void setData( Data data )
+	public void setKey( K key )
 	{
-		this.writeData = data;
+		this.writeKey = key;
+	}
+
+	public V getValue()
+	{
+		return writeValue;
+	}
+
+	public void setValue( V value )
+	{
+		this.writeValue = value;
 	}
 
 	public Type getType()
@@ -55,15 +69,31 @@ public class BayouWrite<Data extends Comparable<Data> & Serializable>
 		this.writeID = id;
 	}
 
+	public boolean equals( Object o )
+	{
+		if ( this == o )
+			return true;
+		if ( o == null )
+			return false;
+
+		BayouWrite<K, V> other = (BayouWrite<K, V>)o;
+		return this.writeID.equals( other.writeID );
+	}
+
+	public int hashCode()
+	{
+		return writeID.hashCode();
+	}
+
 	public int compareTo( BayouWrite other )
 	{
-		return writeID.compareTo( other.writeID );
+		return this.writeID.compareTo( other.writeID );
 	}
 
 	public String toString()
 	{
-		return "<T: " + writeType + ", #: " + writeID + ", D: " +
-			writeData + ">";
+		return "<T:" + writeType + ", #:" + writeID + ", K:" +
+			writeKey + ", V:" + writeValue + ">";
 	}
 }
 

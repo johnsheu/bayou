@@ -9,13 +9,15 @@ import java.util.HashMap;
 
 public class BayouManager
 {
+	private static final Long serialVersionUID = 1L;
+
 	private Communicator communicator;
 
-	private HashMap<String, InetSocketAddress> aliases =
-		new HashMap<String, InetSocketAddress>();
+	private HashMap<String, InetSocketAddress> aliases;
 
 	public BayouManager( int port )
 	{
+		aliases = new HashMap<String, InetSocketAddress>();
 		communicator = new Communicator( port );
 		communicator.start();
 	}

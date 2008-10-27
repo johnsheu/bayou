@@ -21,12 +21,16 @@ import java.util.ArrayList;
  */
 public class ManagerMessage extends Message implements Serializable
 {
+	//  Recommended for Serializable
+	private static final long serialVersionUID = 1L;
+
 	/**
 	 * The <code>Enum</code> defining the possible types of
 	 * <code>ManagerMessage</code> messages.
 	 */
 	public enum Type
 	{
+		NONE,
 		//  The manager sends these kinds of messages
 		GET_DB,
 		GET_TALKING,
@@ -44,10 +48,10 @@ public class ManagerMessage extends Message implements Serializable
 	}
 
 	//  The type of this message
-	private Type messageType;
+	private Type messageType = Type.NONE;
 
 	//  The Database associated with this message, if any
-	private Database messageDatabase = null;
+	private BayouDB messageDatabase = null;
 
 	//  The boolean value associated with this message, if any
 	private Boolean messageBoolean = null;
@@ -71,14 +75,14 @@ public class ManagerMessage extends Message implements Serializable
 	 * <code>null</code>.
 	 *
 	 * @param type       the {@link Type} of this message
-	 * @param database   the {@link Database} associated with this message
+	 * @param database   the {@link BayouDB} associated with this message
 	 * @param value      the <code>Boolean</code> value associated with
 	 *                   this message
 	 * @param addresses  the {@link ArrayList} of
 	 *                   {@link InetSocketAddress} elements associated with
 	 *                   this message
 	 */
-	public void makeMessage( Type type, Database database, Boolean value,
+	public void makeMessage( Type type, BayouDB database, Boolean value,
 		ArrayList<InetSocketAddress> addresses )
 	{
 		messageType = type;
@@ -100,10 +104,10 @@ public class ManagerMessage extends Message implements Serializable
 	/**
 	 * Get the database associated with this <code>ManagerMessage</code>.
 	 *
-	 * @return  the {@link Database} associated with this message, or
+	 * @return  the {@link BayouDB} associated with this message, or
 	 *          <code>null</code> if none
 	 */
-	public Database getDatabase()
+	public BayouDB getDatabase()
 	{
 		return messageDatabase;
 	}
