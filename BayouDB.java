@@ -13,6 +13,7 @@ public class BayouDB<K, V> implements Serializable
 	private TreeSet<BayouWrite<K, V>> writeLog;
 	private LinkedList<BayouWrite<K, V>> undoLog;
 
+	private long acceptStamp;
 	private HashMap<ServerID, Long> versionVector;
 	private HashMap<ServerID, Long> omittedVector;
 	private long CSN;
@@ -25,6 +26,7 @@ public class BayouDB<K, V> implements Serializable
 		writeData = new HashMap<K, V>();
 		writeLog = new TreeSet<BayouWrite<K, V>>();
 		undoLog = new LinkedList<BayouWrite<K, V>>();
+		acceptStamp = 0L;
 		modified = true;
 	}
 
@@ -33,6 +35,7 @@ public class BayouDB<K, V> implements Serializable
 		writeData = new HashMap<K, V>( initialCapacity );
 		writeLog = new TreeSet<BayouWrite<K, V>>();
 		undoLog = new LinkedList<BayouWrite<K, V>>();
+		acceptStamp = 0L;
 		modified = true;
 	}
 
@@ -41,6 +44,7 @@ public class BayouDB<K, V> implements Serializable
 		writeData = new HashMap<K, V>( initialCapacity, loadFactor );
 		writeLog = new TreeSet<BayouWrite<K, V>>();
 		undoLog = new LinkedList<BayouWrite<K, V>>();
+		acceptStamp = 0L;
 		modified = true;
 	}
 
@@ -111,7 +115,13 @@ public class BayouDB<K, V> implements Serializable
 	public void addWrite( BayouWrite<K, V> write )
 	{
 		writeLog.add( write );
+		acceptStamp += 1L;
 		//  Do write-apply heuristics here
+	}
+
+	public long getAcceptStamp()
+	{
+		return acceptStamp;
 	}
 
 	public HashMap<K, V> getMap()

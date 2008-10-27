@@ -244,7 +244,7 @@ public class BayouServer<K, V>
 				return;
 			BayouWrite<K, V> write = new BayouWrite<K, V>(
 				key, value, BayouWrite.Type.ADD,
-				new WriteID( Long.MAX_VALUE, serverID ) );
+				new WriteID( database.getAcceptStamp(), serverID ) );
 			database.addWrite( write );
 		}
 	}
@@ -259,7 +259,7 @@ public class BayouServer<K, V>
 				return;
 			BayouWrite<K, V> write = new BayouWrite<K, V>(
 				key, value, BayouWrite.Type.EDIT,
-				new WriteID( Long.MAX_VALUE, serverID ) );
+				new WriteID( database.getAcceptStamp(), serverID ) );
 			database.addWrite( write );
 		}
 	}
@@ -294,7 +294,7 @@ public class BayouServer<K, V>
 				return;
 			BayouWrite<K, V> write = new BayouWrite<K, V>(
 				key, null, BayouWrite.Type.DELETE,
-				new WriteID( Long.MAX_VALUE, serverID ) );
+				new WriteID( database.getAcceptStamp(), serverID ) );
 			database.addWrite( write );
 		}
 	}

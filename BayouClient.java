@@ -1,5 +1,4 @@
 import java.util.Map;
-import java.util.HashMap;
 import java.util.Scanner;
 
 public class BayouClient{
@@ -60,7 +59,7 @@ public class BayouClient{
 	private void listSongs() {
     	final String SEPARATOR = "\n---------------";
     	System.out.println(SEPARATOR);
-    	for(Map.Entry<String, String> ent : getEntries().entrySet())
+    	for(Map.Entry<String, String> ent : getPlaylist().entrySet())
     		System.out.println("Title: " + ent.getKey() + "\nURL:" + ent.getValue() + SEPARATOR);}
 		
 	private String prompt(Scanner m_scanner, String promptText){
@@ -73,8 +72,8 @@ public class BayouClient{
     public void modifySong(Song song){}
 
     //TODO :: Implement on BayouServer
-	protected HashMap<String, String> getEntries(){
-		return new HashMap<String, String>();}
+	protected Playlist getPlaylist(){
+		return new Playlist();}
 
     public BayouClient(int port, Scanner inputReader){
     	m_server = new BayouServer(port);
