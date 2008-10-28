@@ -39,7 +39,7 @@ public class BayouServer<K, V>
 								reply.setAddress( msg.getAddress() );
 								msg.makeMessage(
 									ManagerMessage.Type.DB_DUMP, database,
-									null, null );
+									null, null, null );
 								communicator.sendMessage( msg );
 								break;
 							}
@@ -49,7 +49,7 @@ public class BayouServer<K, V>
 								reply.setAddress( msg.getAddress() );
 								msg.makeMessage(
 									ManagerMessage.Type.IS_TALKING, null,
-									performAntiEntropy, null );
+									performAntiEntropy, null, null );
 								communicator.sendMessage( msg );
 								break;
 							}
@@ -65,7 +65,7 @@ public class BayouServer<K, V>
 								reply.setAddress( msg.getAddress() );
 								msg.makeMessage(
 									ManagerMessage.Type.IS_UPDATING, null,
-									performUpdates, null );
+									performUpdates, null, null );
 								communicator.sendMessage( msg );
 								break;
 							}
@@ -81,13 +81,41 @@ public class BayouServer<K, V>
 								reply.setAddress( msg.getAddress() );
 								reply.makeMessage(
 									ManagerMessage.Type.ADDRESSES_DUMP, null,
-									null, addresses );
+									null, null, addresses );
 								communicator.sendMessage( reply );
 								break;
 							}
 							case SET_ADDRESSES:
 							{
 								addresses = msg.getAddresses();
+								break;
+							}
+							case GET_SLEEPTIME:
+							{
+								ManagerMessage reply = new ManagerMessage();
+								reply.setAddress( msg.getAddress() );
+								reply.makeMessage(
+									ManagerMessage.Type.IS_SLEEPTIME, null,
+									null, sleepTime, null );
+								communicator.sendMessage( reply );
+							}
+							case SET_SLEEPTIME:
+							{
+								sleepTime = msg.getLong();
+							}
+							case GET_CACHING:
+							{
+								ManagerMessage reply = new ManagerMessage();
+								reply.setAddress( msg.getAddress() );
+								msg.makeMessage(
+									ManagerMessage.Type.IS_CACHING, null,
+									performUpdates, null, null );
+								communicator.sendMessage( msg );
+								break;
+							}
+							case SET_CACHING:
+							{
+								database.setCaching( msg.getBoolean().booleanValue() );
 								break;
 							}
 							case RETIRE:

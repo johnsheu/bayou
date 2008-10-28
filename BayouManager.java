@@ -181,7 +181,7 @@ public class BayouManager
 			ManagerMessage message = new ManagerMessage();
 			message.setAddress( address );
 			message.makeMessage( ManagerMessage.Type.GET_TALKING,
-				null, null, null );
+				null, null, null, null );
 			Message reply = getMessageReply( message );
 			System.out.print( reply.toString() + '\n' );
 			return;
@@ -202,7 +202,7 @@ public class BayouManager
 			ManagerMessage message = new ManagerMessage();
 			message.setAddress( address );
 			message.makeMessage( ManagerMessage.Type.SET_TALKING,
-				null, value, null );
+				null, value, null, null );
 			communicator.sendMessage( message );
 			return;
 		}
@@ -221,7 +221,7 @@ public class BayouManager
 			ManagerMessage message = new ManagerMessage();
 			message.setAddress( address );
 			message.makeMessage( ManagerMessage.Type.GET_UPDATING,
-				null, null, null );
+				null, null, null, null );
 			Message reply = getMessageReply( message );
 			System.out.print( reply.toString() + '\n' );
 			return;
@@ -242,15 +242,15 @@ public class BayouManager
 			ManagerMessage message = new ManagerMessage();
 			message.setAddress( address );
 			message.makeMessage( ManagerMessage.Type.SET_UPDATING,
-				null, value, null );
+				null, value, null, null );
 			communicator.sendMessage( message );
 			return;
 		}
-		else if ( args[0].equalsIgnoreCase( "get_talking" ) )
+		else if ( args[0].equalsIgnoreCase( "get_sleeptime" ) )
 		{
 			if ( args.length != 2 )
 			{
-				System.out.print( "get_talking <host:port>|<alias>\n" );
+				System.out.print( "get_sleeptime <host:port>|<alias>\n" );
 				return;
 			}
 
@@ -260,17 +260,57 @@ public class BayouManager
 
 			ManagerMessage message = new ManagerMessage();
 			message.setAddress( address );
-			message.makeMessage( ManagerMessage.Type.GET_TALKING,
-				null, null, null );
+			message.makeMessage( ManagerMessage.Type.GET_SLEEPTIME,
+				null, null, null, null );
 			Message reply = getMessageReply( message );
 			System.out.print( reply.toString() + '\n' );
 			return;
 		}
-		else if ( args[0].equalsIgnoreCase( "set_talking" ) )
+		else if ( args[0].equalsIgnoreCase( "set_sleeptime" ) )
 		{
 			if ( args.length != 3 )
 			{
-				System.out.print( "set_talking <host:port>|<alias> <\"true\"|\"false\">\n" );
+				System.out.print( "set_sleeptime <host:port>|<alias> <time>\n" );
+				return;
+			}
+
+			long value = Long.parseLong( args[2] );
+			InetSocketAddress address = getAddress( args[1] );
+			if ( address == null )
+				return;
+
+			ManagerMessage message = new ManagerMessage();
+			message.setAddress( address );
+			message.makeMessage( ManagerMessage.Type.SET_SLEEPTIME,
+				null, null, value, null );
+			communicator.sendMessage( message );
+			return;
+		}
+		else if ( args[0].equalsIgnoreCase( "get_caching" ) )
+		{
+			if ( args.length != 2 )
+			{
+				System.out.print( "get_caching <host:port>|<alias>\n" );
+				return;
+			}
+
+			InetSocketAddress address = getAddress( args[1] );
+			if ( address == null )
+				return;
+
+			ManagerMessage message = new ManagerMessage();
+			message.setAddress( address );
+			message.makeMessage( ManagerMessage.Type.GET_CACHING,
+				null, null, null, null );
+			Message reply = getMessageReply( message );
+			System.out.print( reply.toString() + '\n' );
+			return;
+		}
+		else if ( args[0].equalsIgnoreCase( "set_caching" ) )
+		{
+			if ( args.length != 3 )
+			{
+				System.out.print( "set_caching <host:port>|<alias> <\"true\"|\"false\">\n" );
 				return;
 			}
 
@@ -281,8 +321,8 @@ public class BayouManager
 
 			ManagerMessage message = new ManagerMessage();
 			message.setAddress( address );
-			message.makeMessage( ManagerMessage.Type.SET_TALKING,
-				null, value, null );
+			message.makeMessage( ManagerMessage.Type.SET_CACHING,
+				null, value, null, null );
 			communicator.sendMessage( message );
 			return;
 		}
@@ -301,7 +341,7 @@ public class BayouManager
 			ManagerMessage message = new ManagerMessage();
 			message.setAddress( address );
 			message.makeMessage( ManagerMessage.Type.GET_ADDRESSES,
-				null, null, null );
+				null, null, null, null );
 			Message reply = getMessageReply( message );
 			System.out.print( reply.toString() + '\n' );
 			return;
@@ -331,7 +371,7 @@ public class BayouManager
 			ManagerMessage message = new ManagerMessage();
 			message.setAddress( address );
 			message.makeMessage( ManagerMessage.Type.SET_ADDRESSES,
-				null, null, addresses );
+				null, null, null, addresses );
 			communicator.sendMessage( message );
 			return;
 		}
@@ -347,10 +387,16 @@ public class BayouManager
 			System.out.print( " create\n" );
 			System.out.print( " exit\n" );
 			System.out.print( " get_addresses\n" );
+			System.out.print( " get_caching\n" );
+			System.out.print( " get_primary\n" );
+			System.out.print( " get_sleeptime\n" );
 			System.out.print( " get_talking\n" );
 			System.out.print( " get_updating\n" );
 			System.out.print( " quit\n" );
 			System.out.print( " set_addresses\n" );
+			System.out.print( " set_caching\n" );
+			System.out.print( " set_primary\n" );
+			System.out.print( " set_sleeptime\n" );
 			System.out.print( " set_talking\n" );
 			System.out.print( " set_updating\n" );
 			System.out.print( " unalias\n" );

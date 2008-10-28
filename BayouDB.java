@@ -2,6 +2,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.TreeSet;
+import java.util.SortedSet;
 import java.util.Iterator;
 import java.io.Serializable;
 
@@ -23,6 +24,7 @@ public class BayouDB<K, V> implements Serializable
 	private boolean caching = false;
 	private HashMap<K, V> renderedData = null;
 	private boolean modified = true;
+	private long truncateLimit = 16L;
     
 	public BayouDB()
 	{
@@ -38,6 +40,12 @@ public class BayouDB<K, V> implements Serializable
 	{
 		this();
 		caching = useCaching;
+	}
+	
+	public BayouDB( boolean useCaching, long truncate )
+	{
+		this( useCaching );
+		truncateLimit = truncate;
 	}
 
 	public BayouAEResponse<K, V> getUpdates( BayouAERequest request )
@@ -139,6 +147,8 @@ public class BayouDB<K, V> implements Serializable
 
 	public synchronized void applyUpdates( BayouAEResponse<K, V> updates )
 	{
+		modified = true;
+		
 		//  Full DB transfer
 		HashMap<K, V> db = updates.getDatabase();
 		if ( db != null )
@@ -156,6 +166,8 @@ public class BayouDB<K, V> implements Serializable
 					iter.remove();
 			}
 		}
+		
+		long oldCSN = CSN;
 
 		//  Commit notifications
 		LinkedList<WriteID> cn = updates.getCommitNotifications();
@@ -184,7 +196,28 @@ public class BayouDB<K, V> implements Serializable
 		{
 			Iterator<BayouWrite<K, V>> witer = w.iterator();
 			while ( witer.hasNext() )
-				writeLog.add( witer.next() );
+			{
+				BayouWrite<K, V> write = witer.next();
+				writeLog.add( write );
+				if ( write.getWriteID().isCommitted() )
+					CSN = write.getWriteID().getCSN();
+			}
+		}
+		
+		//  Truncate write log as per policy
+		BayouWrite<K, V> from = new BayouWrite<K, V>( null, null, BayouWrite.Type.ADD,
+			new WriteID( oldCSN + 1L, -1L, new ServerID( null, 0L ) ) );
+		BayouWrite<K, V> to = new BayouWrite<K, V>( null, null, BayouWrite.Type.ADD,
+				new WriteID( CSN + 1L, -1L, new ServerID( null, 0L ) ) );
+		SortedSet<BayouWrite<K, V>> subset = writeLog.subSet( from, to );
+		for ( BayouWrite<K,V> write : subset )
+			applyWrite( write, writeData );
+		
+		if ( OSN < CSN - truncateLimit )
+		{
+			to.getWriteID().setCSN( CSN - truncateLimit );
+			writeLog.headSet( to ).clear();
+			OSN = CSN - truncateLimit;
 		}
 	}
 	
@@ -195,11 +228,11 @@ public class BayouDB<K, V> implements Serializable
 
 	public synchronized void addWrite( BayouWrite<K, V> write )
 	{
+		modified = true;
 		writeLog.add( write );
 		acceptStamp += 1L;
 		WriteID id = write.getWriteID();
 		versionVector.put( id.getServerID(), id.getAcceptStamp() );
-		//  Do write-apply heuristics here
 	}
 
 	public long getAcceptStamp()
@@ -209,16 +242,17 @@ public class BayouDB<K, V> implements Serializable
 
 	public synchronized HashMap<K, V> getMap()
 	{
-		if(modified || renderedData == null || !caching)
+		if ( modified || !caching )
 			renderData();
 		
 		return renderedData;
 	}
 
-	private void renderData() {
-		renderedData = new HashMap<K, V>(writeData);
+	private void renderData()
+	{
+		renderedData = new HashMap<K, V>( writeData );
 		
-		for(BayouWrite<K, V> write : writeLog)
+		for ( BayouWrite<K, V> write : writeLog )
 			applyWrite( write, renderedData );
 	}
 
@@ -269,52 +303,40 @@ public class BayouDB<K, V> implements Serializable
 		}
 		return flip;
 	}
-    
-	/*** methods for testing purposes only ***/
-    public void printTreeSet()
-    {
-/*
-	BayouWrite bw;
-	Long bi;
-	int i;
 
-	System.out.println( "Tree Set is: " );
-	System.out.println( "\n\n" );
-	Iterator it = writeLog.iterator();
-	while( it.hasNext() )
+	public boolean isCaching()
 	{
-	    bw = (BayouWrite)it.next();
-	    bi = bw.getWriteID().getCSN();
-	    if( bi == null )
-		i = -1;
-	    else 
-		i = bi.intValue();
-
-	    int as;
-	    Long las = bw.getWriteID().getAcceptStamp();
-	    if( las == null )
-		as = -1;
-	    else
-		as = las.intValue();
-		
-	    System.out.println( "CSN is " + i );
-	    System.out.println( "ServerID is " + bw.getWriteID().getServerID() );
-	    System.out.println( "Accept Stamp is " + as );
-	    System.out.println();
+		return caching;
 	}
 
-	System.out.println( "Done with Tree Set\n\n\n\n" );	    
-*/
-    }
+	public void setCaching( boolean caching )
+	{
+		this.caching = caching;
+	}
+	
+	public long getTruncate()
+	{
+		return truncateLimit;
+	}
+	
+	public void setTruncate( long truncate )
+	{
+		if ( truncate < 0 )
+			truncateLimit = 0;
+		else
+			truncateLimit = truncate;
+	}
     
-    public void dump()
+    public String dump()
     {
-    	System.out.print( "DB : " + writeData.toString() + '\n' );
-    	System.out.print( "WL: " + writeLog.toString() + '\n' );
-    	System.out.print( "UL: " + undoLog.toString() + '\n' );
-    	System.out.print( "VV: " + versionVector.toString() + '\n' );
-    	System.out.print( "OV: " + omittedVector.toString() + '\n' );
-    	System.out.print( "AS :" + acceptStamp + " CSN: " + CSN + " OSN: " + OSN + '\n' );
+    	StringBuffer buffer = new StringBuffer();
+    	buffer.append( "DB : " + writeData.toString() + '\n' );
+    	buffer.append( "WL: " + writeLog.toString() + '\n' );
+    	buffer.append( "UL: " + undoLog.toString() + '\n' );
+    	buffer.append( "VV: " + versionVector.toString() + '\n' );
+    	buffer.append( "OV: " + omittedVector.toString() + '\n' );
+    	buffer.append( "AS :" + acceptStamp + " CSN: " + CSN + " OSN: " + OSN + '\n' );
+    	return buffer.toString();
     }
 
 	public static void main( String[] args )
@@ -370,15 +392,7 @@ public class BayouDB<K, V> implements Serializable
 		
 		db.applyUpdates( response );
 		
-		db.dump();
+		System.out.print( db.dump() );
 		System.out.print( "MAP: " + db.getMap().toString() + '\n' );
-	}
-
-	public boolean isCaching() {
-		return caching;
-	}
-
-	public void setCaching(boolean caching) {
-		this.caching = caching;
 	}
 }

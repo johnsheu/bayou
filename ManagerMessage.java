@@ -41,6 +41,8 @@ public class ManagerMessage extends Message implements Serializable
 		SET_SLEEPTIME,
 		GET_CACHING,
 		SET_CACHING,
+		GET_PRIMARY,
+		SET_PRIMARY,
 		GET_ADDRESSES,
 		SET_ADDRESSES,
 		RETIRE,
@@ -50,6 +52,7 @@ public class ManagerMessage extends Message implements Serializable
 		IS_UPDATING,
 		IS_SLEEPTIME,
 		IS_CACHING,
+		IS_PRIMARY,
 		ADDRESSES_DUMP;
 	}
 
@@ -61,6 +64,9 @@ public class ManagerMessage extends Message implements Serializable
 
 	//  The boolean value associated with this message, if any
 	private Boolean messageBoolean = null;
+	
+	//  The long value associated with this message, if any
+	private Long messageLong = 0L;
 
 	//  The ArrayList of addresses associated with this message, if any
 	private ArrayList<InetSocketAddress> messageAddresses = null;
@@ -88,12 +94,13 @@ public class ManagerMessage extends Message implements Serializable
 	 *                   {@link InetSocketAddress} elements associated with
 	 *                   this message
 	 */
-	public void makeMessage( Type type, BayouDB database, Boolean value,
-		ArrayList<InetSocketAddress> addresses )
+	public void makeMessage( Type type, BayouDB database, Boolean bvalue,
+		Long lvalue, ArrayList<InetSocketAddress> addresses )
 	{
 		messageType = type;
 		messageDatabase = database;
-		messageBoolean = value;
+		messageBoolean = bvalue;
+		messageLong = lvalue;
 		messageAddresses = addresses;
 	}
 
@@ -131,6 +138,18 @@ public class ManagerMessage extends Message implements Serializable
 	}
 
 	/**
+	 * Get the long integer value associated with this
+	 * <code>ManagerMessage</code>.
+	 *
+	 * @return  the <code>Long</code> associated with this message, or
+	 *          <code>null</code> if none
+	 */
+	public Long getLong()
+	{
+		return messageLong;
+	}
+
+	/**
 	 * Get the list of addresses associated with this
 	 * <code>ManagerMessage</code>.
 	 *
@@ -146,9 +165,11 @@ public class ManagerMessage extends Message implements Serializable
 	public String toString()
 	{
 		if ( messageDatabase != null )
-			return super.toString() + messageType + ": " + messageDatabase;
+			return super.toString() + messageType + ": " + '\n' + messageDatabase.dump();
 		else if ( messageBoolean != null )
 			return super.toString() + messageType + ": " + messageBoolean;
+		else if ( messageLong != null )
+			return super.toString() + messageType + ": " + messageLong;
 		else if ( messageAddresses != null )
 			return super.toString() + messageType + ": " + messageAddresses;
 		else
