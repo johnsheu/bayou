@@ -58,59 +58,98 @@ public class BayouDB<K, V> implements Serializable
 	{
 		BayouAEResponse<K, V> response = new BayouAEResponse<K, V>();
 
-	        Iterator<ServerID> servers = sendVersionVector.keySet().iterator();
+	        Iterator<ServerID> servers = versionVector.keySet().iterator();
 
-	        TreeSet<BayouWrite> updates = new TreeSet<BayouWrite>();
+		HashMap<ServerID, Long> recvVersionVector = request.getRecvVV();
 
-	        //KAREN - handle case with CSN
-	        if( sendCSN.compareTo( recvCSN ) > 0 )
-		{
+		long recvCSN = request.getRecvCSN();
 
-		}
 
-		WriteID firstUncommittedWID = new WriteID( new Long( 0 ), new ServerID( null, new Long( 0 )));
-		BayouWrite firstUncommitted = new BayouWrite( "", "", BayouWrite.Type.EDIT, firstUncommittedWID );
-		TreeSet<BayouWrite> uncommittedWrites = new TreeSet<BayouWrite>( writeLog.tailSet( firstUncommitted ));
+		Iterator<BayouWrite<K, V>> writes;
 
-		BayouWrite write;
-		Long writeAcceptStamp;
-		Long sendAcceptStamp;
-		Long recvAcceptStamp;
+		BayouWrite<K, V> write;
+		BayouWrite<K, V> tempWrite;
+
 		ServerID writeServer;
 		ServerID server;
-		Iterator<BayouWrite> writes;
-		boolean aboveRange;
+
+		WriteID wid;
+
+		long writeAcceptStamp;
+		long sendAcceptStamp;
+		long recvAcceptStamp;
+
+		boolean outOfRange;
+
+
+	        if( CSN > recvCSN )
+		{
+			outOfRange = false;
+
+			writes = writeLog.listIterator();
+
+			while( writes.hasNext() && !outOfRange)
+			{
+				write = writes.next();
+				wid = write.getWriteID();
+				
+				if( wid.getCSN() <= recvCSN )
+					outOfRange = true;
+
+				else
+				{
+					writeAcceptStamp = wid.getAcceptStamp();
+					recvAcceptStamp = recvVersionVector.get( wid.getServerID() );
+
+					if( recvAcceptStamp > writeAcceptStamp )
+						response.addWrite( write );
+					else
+						response.addCommitNotification( wid );
+				}
+			}
+		}
+
+
+
 	        while( servers.hasNext() )
 		{
 			server = servers.next();
 
-			aboveRange = true;
-			writes = uncommittedWrites.descendingIterator();
-			while( writes.hasNext() && aboveRange )
+			outOfRange = false;
+			writes = writeLog.descendingIterator();
+			while( writes.hasNext() && !outOfRange )
 			{
 				write = writes.next();
-				writeAcceptStamp = write.getWriteID().getAcceptStamp();
-				sendAcceptStamp  = sendVersionVector.get( server );
-				recvAcceptStamp  = recvVersionVector.get( server );
-		    
-				if( writeAcceptStamp > recvAcceptStamp )
-				{
-					writeServer = write.getWriteID().getServerID() ;
-					if( writeAcceptStamp < sendAcceptStamp && server.equals( writeServer ))
-					{
-					    updates.add( write );
-					    aboveRange = false;
-					}
-				}
+
+				if( write.getWriteID().isCommitted() )
+					outOfRange = true;
+
 				else
-					aboveRange = false;
+				{
+				    
+					writeAcceptStamp = write.getWriteID().getAcceptStamp();
+					sendAcceptStamp  = versionVector.get( server );
+					recvAcceptStamp  = recvVersionVector.get( server );
+		    
+					if( writeAcceptStamp > recvAcceptStamp )
+					{
+						writeServer = write.getWriteID().getServerID() ;
+						if( writeAcceptStamp < sendAcceptStamp && server.equals( writeServer ))
+						{
+							response.addWrite( write );
+							outOfRange = true;
+						}
+					}
+					else
+						outOfRange = true;
+				}
 			}
 
 		}
-	        return updates;
+	        return response;
 
 	}
-		*/
+
 	public synchronized void applyUpdates( BayouAEResponse<K, V> updates )
 	{
 		//  Full DB transfer
@@ -296,22 +335,6 @@ outer:
 	}
 
 	System.out.println( "Done with Tree Set\n\n\n\n" );	    
-*/
-    }
-
-    public void updateCSN( WriteID wid, Long csn )
-    {
-/*
-	BayouWrite bw1 = new BayouWrite( "", "", BayouWrite.Type.EDIT, wid );
-	if( writeLog.contains( bw1 ))
-	{
-	    BayouWrite bw2 = writeLog.floor( bw1 );
-	    writeLog.remove( bw2 );
-	    bw2.getWriteID().setCSN( csn );
-	    writeLog.add( bw2 );
-	}
-	else
-	    System.out.println( "ZOMG YOU SHOULD NOT BE HERE" );
 */
     }
     

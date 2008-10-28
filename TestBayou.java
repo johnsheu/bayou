@@ -66,8 +66,8 @@ public class TestBayou
 	ServerID sid4 = new ServerID( sid2, 2L );
 	ServerID sid5 = new ServerID( sid2, 3L );
 
-	WriteID csn1 = new WriteID( 1L );
-	WriteID csn2 = new WriteID( 2L );
+	WriteID csn1 = new WriteID( 1, 1, sid1 );
+	WriteID csn2 = new WriteID( 2, 1, sid1 );
 
 	WriteID as1 = new WriteID( 1L, sid2 );
 	WriteID as2 = new WriteID( 2L, sid2 );
