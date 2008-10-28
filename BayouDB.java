@@ -1,4 +1,3 @@
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -8,6 +7,8 @@ import java.io.Serializable;
 
 public class BayouDB<K, V> implements Serializable
 {
+	private static final long serialVersionUID = 1L;
+
 	private HashMap<K, V> writeData;
 	private LinkedList<BayouWrite<K, V>> writeLog;
 	private LinkedList<BayouWrite<K, V>> undoLog;
@@ -25,6 +26,8 @@ public class BayouDB<K, V> implements Serializable
 		writeData = new HashMap<K, V>();
 		writeLog = new LinkedList<BayouWrite<K, V>>();
 		undoLog = new LinkedList<BayouWrite<K, V>>();
+		versionVector = new HashMap<ServerID, Long>();
+		omittedVector = new HashMap<ServerID, Long>();
 		acceptStamp = 0L;
 		modified = true;
 	}
@@ -34,6 +37,8 @@ public class BayouDB<K, V> implements Serializable
 		writeData = new HashMap<K, V>( initialCapacity );
 		writeLog = new LinkedList<BayouWrite<K, V>>();
 		undoLog = new LinkedList<BayouWrite<K, V>>();
+		versionVector = new HashMap<ServerID, Long>();
+		omittedVector = new HashMap<ServerID, Long>();
 		acceptStamp = 0L;
 		modified = true;
 	}
@@ -43,6 +48,8 @@ public class BayouDB<K, V> implements Serializable
 		writeData = new HashMap<K, V>( initialCapacity, loadFactor );
 		writeLog = new LinkedList<BayouWrite<K, V>>();
 		undoLog = new LinkedList<BayouWrite<K, V>>();
+		versionVector = new HashMap<ServerID, Long>();
+		omittedVector = new HashMap<ServerID, Long>();
 		acceptStamp = 0L;
 		modified = true;
 	}
@@ -50,8 +57,6 @@ public class BayouDB<K, V> implements Serializable
 	public BayouAEResponse<K, V> getUpdates( BayouAERequest request )
 	{
 		BayouAEResponse<K, V> response = new BayouAEResponse<K, V>();
-		/*stub*/
-		/*Note: Changes in the returned set are reflected in this set*/
 
 	        Iterator<ServerID> servers = sendVersionVector.keySet().iterator();
 
@@ -105,20 +110,32 @@ public class BayouDB<K, V> implements Serializable
 	        return updates;
 
 	}
-
+		*/
 	public synchronized void applyUpdates( BayouAEResponse<K, V> updates )
 	{
+		//  Full DB transfer
 		HashMap<K, V> db = updates.getDatabase();
 		if ( db != null )
 		{
 			writeData = db;
 			omittedVector = updates.getOmittedVector();
 			OSN = updates.getOSN();
+
+			ListIterator<BayouWrite<K, V>> iter = writeLog.listIterator();
+			while ( iter.hasNext() )
+			{
+				BayouWrite<K, V> write = iter.next();
+				WriteID id = write.getWriteID();
+				if ( id.getAcceptStamp() <= omittedVector.get( id.getServerID() ) )
+					iter.remove();
+			}
 		}
 
+		//  Commit notifications
 		LinkedList<WriteID> cn = updates.getCommitNotifications();
 		if ( cn != null )
 		{
+			//  Remove the writes to make committed from the write log
 			Collections.sort( cn );
 			ListIterator<BayouWrite<K, V>> iter = writeLog.listIterator();
 			Iterator<WriteID> citer = cn.iterator();
@@ -134,7 +151,8 @@ outer:
 					if ( id.getAcceptStamp() == cid.getAcceptStamp() &&
 						id.getServerID().equals( cid.getServerID() ) )
 					{
-						id.setCSN( cid.getCSN() );
+						CSN = cid.getCSN();
+						id.setCSN( CSN );
 						iter.remove();
 						list.add( item );
 						continue outer;
@@ -143,6 +161,7 @@ outer:
 				break;
 			}
 
+			//  Add them back in, now as committed writes
 			iter = writeLog.listIterator();
 			Iterator<BayouWrite<K, V>> liter = list.iterator();
 outer:
@@ -154,6 +173,11 @@ outer:
 					BayouWrite<K, V> item = iter.next();
 					if ( item.compareTo( commit ) <= 0 )
 						continue;
+					WriteID id = commit.getWriteID();
+					if ( id.isCommitted() )
+						CSN = id.getCSN();
+					else
+						versionVector.put( id.getServerID(), id.getAcceptStamp() );
 					iter.add( item );
 					iter.set( commit );
 					continue outer;
@@ -162,6 +186,7 @@ outer:
 			}
 		}
 
+		//  Unknown writes
 		LinkedList<BayouWrite<K, V>> w = updates.getWrites();
 		if ( w != null )
 		{
@@ -189,6 +214,8 @@ outer:
 	{
 		writeLog.add( write );
 		acceptStamp += 1L;
+		WriteID id = write.getWriteID();
+		versionVector.put( id.getServerID(), id.getAcceptStamp() );
 		//  Do write-apply heuristics here
 	}
 
@@ -238,6 +265,7 @@ outer:
 	/*** methods for testing purposes only ***/
     public void printTreeSet()
     {
+/*
 	BayouWrite bw;
 	Long bi;
 	int i;
@@ -268,11 +296,12 @@ outer:
 	}
 
 	System.out.println( "Done with Tree Set\n\n\n\n" );	    
+*/
     }
-
 
     public void updateCSN( WriteID wid, Long csn )
     {
+/*
 	BayouWrite bw1 = new BayouWrite( "", "", BayouWrite.Type.EDIT, wid );
 	if( writeLog.contains( bw1 ))
 	{
@@ -283,6 +312,56 @@ outer:
 	}
 	else
 	    System.out.println( "ZOMG YOU SHOULD NOT BE HERE" );
+*/
+    }
+    
+    public void dump()
+    {
+    	System.out.print( "DB : " + writeData.toString() + '\n' );
+    	System.out.print( "WL: " + writeLog.toString() + '\n' );
+    	System.out.print( "UL: " + undoLog.toString() + '\n' );
+    	System.out.print( "VV: " + versionVector.toString() + '\n' );
+    	System.out.print( "OV: " + omittedVector.toString() + '\n' );
+    	System.out.print( "AS :" + acceptStamp + " CSN: " + CSN + " OSN: " + OSN + '\n' );
     }
 
+	public static void main( String[] args )
+	{
+		BayouDB<String, String> db = new BayouDB<String, String>();
+		ServerID self = new ServerID( null, 1L );
+		ServerID other = new ServerID( null, 2L );
+		
+		db.addWrite( new BayouWrite<String, String>(
+			"song1", "http://www.example1.com", BayouWrite.Type.ADD,
+			new WriteID( db.getAcceptStamp(), self ) ) );
+		
+		db.addWrite( new BayouWrite<String, String>(
+			"song2", "http://www.example2.com", BayouWrite.Type.ADD,
+			new WriteID( db.getAcceptStamp(), self ) ) );
+		
+		db.addWrite( new BayouWrite<String, String>(
+			"song3", "http://www.example3.com", BayouWrite.Type.ADD,
+			new WriteID( db.getAcceptStamp(), self ) ) );
+		
+		db.addWrite( new BayouWrite<String, String>(
+			"song3", "http://www.3example.com", BayouWrite.Type.EDIT,
+			new WriteID( db.getAcceptStamp(), self ) ) );;
+		
+		db.addWrite( new BayouWrite<String, String>(
+			"song2", "", BayouWrite.Type.DELETE,
+			new WriteID( db.getAcceptStamp(), self ) ) );
+		
+		db.addWrite( new BayouWrite<String, String>(
+			"song3", "http://www.example.3.com", BayouWrite.Type.EDIT,
+			new WriteID( db.getAcceptStamp(), self ) ) );
+		
+		BayouAEResponse<String, String> response = new BayouAEResponse<String, String>();
+		response.addWrite( new BayouWrite<String, String>( "song3", "", BayouWrite.Type.DELETE,
+			new WriteID( 4L, other ) ) );
+		
+		db.applyUpdates( response );
+		
+		db.dump();
+		System.out.print( "MAP: " + db.getMap().toString() + '\n' );
+	}
 }
