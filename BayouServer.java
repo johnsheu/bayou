@@ -109,13 +109,28 @@ public class BayouServer<K, V>
 								reply.setAddress( msg.getAddress() );
 								msg.makeMessage(
 									ManagerMessage.Type.IS_CACHING, null,
-									performUpdates, null, null );
+									database.isCaching(), null, null );
 								communicator.sendMessage( msg );
 								break;
 							}
 							case SET_CACHING:
 							{
 								database.setCaching( msg.getBoolean().booleanValue() );
+								break;
+							}
+							case GET_PRIMARY:
+							{
+								ManagerMessage reply = new ManagerMessage();
+								reply.setAddress( msg.getAddress() );
+								msg.makeMessage(
+									ManagerMessage.Type.IS_PRIMARY, null,
+									database.isPrimary(), null, null );
+								communicator.sendMessage( msg );
+								break;
+							}
+							case SET_PRIMARY:
+							{
+								database.setPrimary( msg.getBoolean().booleanValue() );
 								break;
 							}
 							case RETIRE:

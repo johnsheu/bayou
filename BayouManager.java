@@ -326,6 +326,46 @@ public class BayouManager
 			communicator.sendMessage( message );
 			return;
 		}
+		else if ( args[0].equalsIgnoreCase( "get_primary" ) )
+		{
+			if ( args.length != 2 )
+			{
+				System.out.print( "get_primary <host:port>|<alias>\n" );
+				return;
+			}
+
+			InetSocketAddress address = getAddress( args[1] );
+			if ( address == null )
+				return;
+
+			ManagerMessage message = new ManagerMessage();
+			message.setAddress( address );
+			message.makeMessage( ManagerMessage.Type.GET_PRIMARY,
+				null, null, null, null );
+			Message reply = getMessageReply( message );
+			System.out.print( reply.toString() + '\n' );
+			return;
+		}
+		else if ( args[0].equalsIgnoreCase( "set_primary" ) )
+		{
+			if ( args.length != 3 )
+			{
+				System.out.print( "set_primary <host:port>|<alias> <\"true\"|\"false\">\n" );
+				return;
+			}
+
+			boolean value = Boolean.parseBoolean( args[2] );
+			InetSocketAddress address = getAddress( args[1] );
+			if ( address == null )
+				return;
+
+			ManagerMessage message = new ManagerMessage();
+			message.setAddress( address );
+			message.makeMessage( ManagerMessage.Type.SET_PRIMARY,
+				null, value, null, null );
+			communicator.sendMessage( message );
+			return;
+		}
 		else if ( args[0].equalsIgnoreCase( "get_addresses" ) )
 		{
 			if ( args.length != 2 )
