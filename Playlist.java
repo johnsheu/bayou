@@ -4,6 +4,13 @@ import java.util.Random;
 
 public class Playlist extends HashMap<String, String> {
 
+	private static final long serialVersionUID = 1L;
+
+	public Playlist()
+	{
+		super();
+	}
+
 	public Playlist( Map<String, String> map )
 	{
 		super( map );
