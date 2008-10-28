@@ -1,24 +1,29 @@
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+
 public class TestBayou
 {
-    public static void main(String[] args)
-    {
-	TestBayou tb = new TestBayou();
-	tb.start();
-    }
+	public static void main(String[] args)
+	{
+		TestBayou tb = new TestBayou();
+		tb.start();
+	}
 
-    public void start()
-    {
-	testServerID();
-	testBayouWrite();
-    }
+	public void start()
+	{
+		testServerID();
+		testBayouWrite();
+		testGetUpdates();
+	}
 
-    public void testServerID()
-    {
-	ServerID sid1 = new ServerID( null, 1L );
-	ServerID sid2 = new ServerID( sid1, 2L );
-	ServerID sid3 = new ServerID( sid1, 2L );
-	ServerID sid4 = new ServerID( sid1, 3L );
-	ServerID sid5 = new ServerID( sid2, 2L );
+	public void testServerID()
+	{
+		ServerID sid1 = new ServerID( null, 1L );
+		ServerID sid2 = new ServerID( sid1, 2L );
+		ServerID sid3 = new ServerID( sid1, 2L );
+		ServerID sid4 = new ServerID( sid1, 3L );
+		ServerID sid5 = new ServerID( sid2, 2L );
 
 	int result;
 	result = sid1.compareTo( sid1 );
@@ -36,6 +41,23 @@ public class TestBayou
 	result = sid3.compareTo( sid2 );
 	if( result != 0 )
 	    System.out.println( "Exception ServerID 5.  Result is: " + result );
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 	result = sid3.compareTo( sid4 );
 	if( result != -1 )
 	    System.out.println( "Exception ServerID 6.  Result is: " + result );
@@ -143,4 +165,76 @@ public class TestBayou
 	if( result != 0)
 	    System.out.println( "Exception BayouWrite 21.  Result is: " + result );
     }
+
+
+	public void testGetUpdates()
+	{
+		BayouDB<String, String> db = new BayouDB<String, String>();
+
+		ServerID sid1 = new ServerID( null, 1L ),
+			 sid2 = new ServerID( sid1, 2L ),
+		         sid3 = new ServerID( sid1, 3L ),
+			 sid4 = new ServerID( sid1, 4L ),
+			 sid5 = new ServerID( sid1, 5L );
+		    
+
+		WriteID wid1  = new WriteID( 1L, 1L, sid1 ),
+			wid2  = new WriteID( 2L, 2L, sid1 ),
+			wid3  = new WriteID( 3L, 1L, sid2 ),
+			wid4  = new WriteID( 4L, 1L, sid3 ),
+			wid5  = new WriteID( 5L, 2L, sid2 ),
+			wid6  = new WriteID( 2L, sid3 ),
+			wid7  = new WriteID( 3L, sid2 ),
+			wid8  = new WriteID( 4L, sid2 ),
+			wid9  = new WriteID( 3L, sid3 ),
+			wid10 = new WriteID( 4L, sid3);
+
+
+		BayouAEResponse resp = new BayouAEResponse();		
+
+		resp.addWrite( new BayouWrite<String, String> ("", "", BayouWrite.Type.EDIT, wid1  ));
+		resp.addWrite( new BayouWrite<String, String> ("", "", BayouWrite.Type.EDIT, wid2  ));
+		resp.addWrite( new BayouWrite<String, String> ("", "", BayouWrite.Type.EDIT, wid3  ));
+		resp.addWrite( new BayouWrite<String, String> ("", "", BayouWrite.Type.EDIT, wid4  ));
+		resp.addWrite( new BayouWrite<String, String> ("", "", BayouWrite.Type.EDIT, wid5  ));
+		resp.addWrite( new BayouWrite<String, String> ("", "", BayouWrite.Type.EDIT, wid6  ));
+		resp.addWrite( new BayouWrite<String, String> ("", "", BayouWrite.Type.EDIT, wid7  ));
+		resp.addWrite( new BayouWrite<String, String> ("", "", BayouWrite.Type.EDIT, wid8  ));
+		resp.addWrite( new BayouWrite<String, String> ("", "", BayouWrite.Type.EDIT, wid9  ));
+		resp.addWrite( new BayouWrite<String, String> ("", "", BayouWrite.Type.EDIT, wid10 ));
+
+		db.applyUpdates( resp );
+
+		HashMap<ServerID, Long> versionVector = new HashMap<ServerID, Long>();
+		
+		versionVector.put( sid1, 2L );
+		versionVector.put( sid2, 1L );
+		versionVector.put( sid3, 3L );
+		
+		BayouAERequest request = new BayouAERequest( 1L, 4L, versionVector );
+
+		resp = db.getUpdates( request );
+
+		Iterator<BayouWrite<String, String>> writes = resp.getWrites().iterator();
+
+		WriteID wid;
+
+		System.out.println();
+		while( writes.hasNext() )
+		{
+		    wid = writes.next().getWriteID();
+		    System.out.println( wid );
+		}
+
+		Iterator<LinkedList<WriteID>> notes = resp.getCommitNotifications().iterator();
+
+
+		System.out.println();
+		while( notes.hasNext() )
+		{
+		    System.out.println( notes.next() );
+		}
+
+		System.out.println();		
+	}
 }

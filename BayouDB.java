@@ -58,9 +58,6 @@ public class BayouDB<K, V> implements Serializable
 	public BayouAEResponse<K, V> getUpdates( BayouAERequest request )
 	{
 		BayouAEResponse<K, V> response = new BayouAEResponse<K, V>();
-		return response;
-/*
-	        Iterator<ServerID> servers = versionVector.keySet().iterator();
 
 		HashMap<ServerID, Long> recvVersionVector = request.getRecvVV();
 
@@ -83,6 +80,16 @@ public class BayouDB<K, V> implements Serializable
 
 		boolean outOfRange;
 
+		if( OSN > recvCSN )
+		{
+		    //KAREN - rollback
+
+		    response.addDatabase( writeData );
+		    response.addOSN( OSN );
+
+		    //KAREN - need to set version vector and CSN 
+		    
+		}
 
 	        if( CSN > recvCSN )
 		{
@@ -90,15 +97,20 @@ public class BayouDB<K, V> implements Serializable
 
 			writes = writeLog.iterator();
 
-			while( writes.hasNext() && !outOfRange)
+			long writeCSN;
+
+			while( writes.hasNext() && !outOfRange )
 			{
 				write = writes.next();
-				wid = write.getWriteID();
-				
-				if( wid.getCSN() <= recvCSN )
-					outOfRange = true;
 
-				else
+				wid = write.getWriteID();
+
+				writeCSN = wid.getCSN();
+
+				if( writeCSN == CSN )
+				    outOfRange = true;
+
+				if( writeCSN > recvCSN )
 				{
 					writeAcceptStamp = wid.getAcceptStamp();
 					recvAcceptStamp = recvVersionVector.get( wid.getServerID() );
@@ -112,6 +124,7 @@ public class BayouDB<K, V> implements Serializable
 		}
 
 
+	        Iterator<ServerID> servers = versionVector.keySet().iterator();
 
 	        while( servers.hasNext() )
 		{
@@ -128,7 +141,6 @@ public class BayouDB<K, V> implements Serializable
 
 				else
 				{
-				    
 					writeAcceptStamp = write.getWriteID().getAcceptStamp();
 					sendAcceptStamp  = versionVector.get( server );
 					recvAcceptStamp  = recvVersionVector.get( server );
@@ -136,20 +148,21 @@ public class BayouDB<K, V> implements Serializable
 					if( writeAcceptStamp > recvAcceptStamp )
 					{
 						writeServer = write.getWriteID().getServerID() ;
-						if( writeAcceptStamp < sendAcceptStamp && server.equals( writeServer ))
+						if( server.equals( writeServer ))
 						{
 							response.addWrite( write );
-							outOfRange = true;
 						}
 					}
 					else
+					{
 						outOfRange = true;
+						System.out.println( "KAREN IN ELSE" );
+					}
 				}
 			}
 
 		}
-	        return response;
-*/
+		return response;
 	}
 
 	public synchronized void applyUpdates( BayouAEResponse<K, V> updates )
