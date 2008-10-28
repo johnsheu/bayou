@@ -49,8 +49,7 @@ public class BayouClient{
 	    	case 3: removeSong(prompt(m_scanner, "title")); break;
 	    	case 4: listSongs(); break;
 	    	case 5: exit(); break;
-	    	case 0: //manualConnectPrompt(); 
-	    		break;
+	    	case 0: System.out.println("You can't do this yet.  Sorry!"); break;
 	    	default: System.out.println("Invalid option."); break;}}}
     
     private void exit() {
