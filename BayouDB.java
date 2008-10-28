@@ -21,12 +21,12 @@ public class BayouDB<K, V> implements Serializable
 	private long OSN;
 	
 	private boolean primary;
+	private long truncateLimit;
 	
 	//For caching current rendering of the playlist/map.
 	private boolean caching;
-	private HashMap<K, V> renderedData;
 	private boolean modified;
-	private long truncateLimit;
+	private HashMap<K, V> renderedData;
     
 	public BayouDB()
 	{
@@ -35,12 +35,14 @@ public class BayouDB<K, V> implements Serializable
 		undoLog = new LinkedList<BayouWrite<K, V>>();
 		versionVector = new HashMap<ServerID, Long>();
 		omittedVector = new HashMap<ServerID, Long>();
-		renderedData = null;
-		primary = false;
-		modified = true;
-		caching = false;
 		acceptStamp = 0L;
+		CSN = -1L;
+		OSN = -1L;
+		primary = false;
 		truncateLimit = 16L;
+		caching = false;
+		modified = true;
+		renderedData = null;
 	}
 	
 	public BayouDB( boolean useCaching )
@@ -164,7 +166,6 @@ public class BayouDB<K, V> implements Serializable
 	public synchronized void applyUpdates( BayouAEResponse<K, V> updates )
 	{
 		modified = true;
-		
 		//  Full DB transfer
 		HashMap<K, V> db = updates.getDatabase();
 		if ( db != null )
@@ -195,8 +196,7 @@ public class BayouDB<K, V> implements Serializable
 			while ( citer.hasNext() )
 			{
 				WriteID cid = citer.next();
-				BayouWrite<K, V> item = new BayouWrite<K, V>( null, null,
-					BayouWrite.Type.ADD,
+				BayouWrite<K, V> item = new BayouWrite<K, V>( null, null, null,
 					new WriteID( cid.getAcceptStamp(), cid.getServerID() ) );
 				item = writeLog.ceiling( item );
 				writeLog.remove( item );
@@ -242,10 +242,10 @@ public class BayouDB<K, V> implements Serializable
 		}
 		
 		//  Truncate write log as per policy
-		BayouWrite<K, V> from = new BayouWrite<K, V>( null, null, BayouWrite.Type.ADD,
-			new WriteID( oldCSN + 1L, -1L, new ServerID( null, 0L ) ) );
-		BayouWrite<K, V> to = new BayouWrite<K, V>( null, null, BayouWrite.Type.ADD,
-				new WriteID( CSN + 1L, -1L, new ServerID( null, 0L ) ) );
+		BayouWrite<K, V> from = new BayouWrite<K, V>( null, null, null, 
+			new WriteID( oldCSN + 1L, -1L, null ) );
+		BayouWrite<K, V> to = new BayouWrite<K, V>( null, null, null,
+			new WriteID( CSN + 1L, -1L, null ) );
 		SortedSet<BayouWrite<K, V>> subset = writeLog.subSet( from, to );
 		for ( BayouWrite<K,V> write : subset )
 			applyWrite( write, writeData );
@@ -253,7 +253,14 @@ public class BayouDB<K, V> implements Serializable
 		if ( OSN <= CSN - truncateLimit )
 		{
 			to.getWriteID().setCSN( CSN - truncateLimit + 1 );
-			writeLog.headSet( to ).clear();
+			SortedSet<BayouWrite<K, V>> trunc = writeLog.headSet( to );
+			Iterator<BayouWrite<K, V>> titer = trunc.iterator();
+			while ( titer.hasNext() )
+			{
+				WriteID id = titer.next().getWriteID();
+				omittedVector.put( id.getServerID(), id.getAcceptStamp() );
+				titer.remove();
+			}
 			OSN = CSN - truncateLimit + 1;
 		}
 	}
@@ -291,8 +298,10 @@ public class BayouDB<K, V> implements Serializable
 	{
 		renderedData = new HashMap<K, V>( writeData );
 		
-		//"commitBoundaryIndex" is a fake write used to separate all the committed writes in the treeSet from all the uncommitted ones.
-		BayouWrite<K, V> commitBoundaryIndex = new BayouWrite<K, V>(null, null, null, new WriteID(-1,null));
+		//  "commitBoundaryIndex" is a fake write used to separate all the
+		//  committed writes in the treeSet from all the uncommitted ones.
+		BayouWrite<K, V> commitBoundaryIndex =
+			new BayouWrite<K, V>( null, null, null, new WriteID( -1,null ) );
 		for( BayouWrite<K, V> write : writeLog.tailSet( commitBoundaryIndex, false ) )
 			applyWrite( write, renderedData );
 	}
