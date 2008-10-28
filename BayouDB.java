@@ -19,8 +19,11 @@ public class BayouDB<K, V> implements Serializable
 	private HashMap<ServerID, Long> omittedVector;
 	private long CSN;
 	private long OSN;
-
-	private boolean modified;
+	
+	//For caching current rendering of the playlist/map.
+	private boolean caching = false;
+	private HashMap<K, V> renderedData = null;
+	private boolean modified = true;
     
 	public BayouDB()
 	{
@@ -30,31 +33,13 @@ public class BayouDB<K, V> implements Serializable
 		versionVector = new HashMap<ServerID, Long>();
 		omittedVector = new HashMap<ServerID, Long>();
 		acceptStamp = 0L;
-		modified = true;
 	}
-
-	public BayouDB( int initialCapacity )
+	
+	public BayouDB(boolean useCaching)
 	{
-		writeData = new HashMap<K, V>( initialCapacity );
-		writeLog = new TreeSet<BayouWrite<K, V>>();
-		undoLog = new LinkedList<BayouWrite<K, V>>();
-		versionVector = new HashMap<ServerID, Long>();
-		omittedVector = new HashMap<ServerID, Long>();
-		acceptStamp = 0L;
-		modified = true;
+		this();
+		caching = useCaching;
 	}
-
-	public BayouDB( int initialCapacity, float loadFactor )
-	{
-		writeData = new HashMap<K, V>( initialCapacity, loadFactor );
-		writeLog = new TreeSet<BayouWrite<K, V>>();
-		undoLog = new LinkedList<BayouWrite<K, V>>();
-		versionVector = new HashMap<ServerID, Long>();
-		omittedVector = new HashMap<ServerID, Long>();
-		acceptStamp = 0L;
-		modified = true;
-	}
-
 	public BayouAEResponse<K, V> getUpdates( BayouAERequest request )
 	{
 		BayouAEResponse<K, V> response = new BayouAEResponse<K, V>();
@@ -266,15 +251,17 @@ outer:
 
 	public synchronized HashMap<K, V> getMap()
 	{
-		HashMap<K, V> entries = (HashMap<K, V>)writeData.clone();
-		Iterator<BayouWrite<K, V>> iter = writeLog.iterator();
-		while ( iter.hasNext() )
-		{
-			applyWrite( iter.next(), entries );
-			//  Uncomment to get the apply-writes-on-render semantics
-			//iter.remove();
-		}
-		return entries;
+		if(modified || renderedData == null || !caching)
+			renderData();
+		
+		return renderedData;
+	}
+
+	private void renderData() {
+		renderedData = new HashMap<K, V>(writeData);
+		
+		for(BayouWrite<K, V> write : writeLog)
+			applyWrite( write, renderedData );
 	}
 
 	private boolean applyWrite( BayouWrite<K, V> write, HashMap<K, V> data )
@@ -387,5 +374,13 @@ outer:
 		
 		db.dump();
 		System.out.print( "MAP: " + db.getMap().toString() + '\n' );
+	}
+
+	public boolean isCaching() {
+		return caching;
+	}
+
+	public void setCaching(boolean caching) {
+		this.caching = caching;
 	}
 }
