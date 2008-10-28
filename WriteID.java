@@ -24,6 +24,13 @@ public class WriteID implements Comparable<WriteID>, Serializable
 		serverID = server;
 	}
 
+	public WriteID( long CSN, long acceptStamp, ServerID server )
+	{
+		this.CSN = csn;
+		this.acceptStamp = acceptStamp;
+		serverID = server;
+	}
+
 	public void setCSN( long CSN )
 	{
 		this.CSN = CSN;

@@ -3,6 +3,11 @@ import java.util.Map;
 import java.util.Random;
 
 public class Playlist extends HashMap<String, String> {
+
+	public Playlist( Map<String, String> map )
+	{
+		super( map );
+	}
 	
 	public Song getSong(String songTitle){
 		return new Song(songTitle, get(songTitle));

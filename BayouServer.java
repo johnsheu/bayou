@@ -160,7 +160,7 @@ public class BayouServer<K, V>
 
 	public void start()
 	{
-		synchronized( communicator )
+		synchronized ( communicator )
 		{
 			if ( serverThread != null )
 				return;
@@ -174,7 +174,7 @@ public class BayouServer<K, V>
 
 	public void stop()
 	{
-		synchronized( communicator )
+		synchronized ( communicator )
 		{
 			if ( serverThread == null )
 				return;
@@ -196,7 +196,7 @@ public class BayouServer<K, V>
 
 	public boolean isStarted()
 	{
-		synchronized( communicator )
+		synchronized ( communicator )
 		{
 			return serverThread != null;
 		}
@@ -208,7 +208,7 @@ public class BayouServer<K, V>
 
 	public void create()
 	{
-		synchronized( database )
+		synchronized ( database )
 		{
 			if ( serverID != null )
 				return;
@@ -218,7 +218,7 @@ public class BayouServer<K, V>
 
 	public void retire()
 	{
-		synchronized( database )
+		synchronized ( database )
 		{
 			if ( serverID == null )
 				return;
@@ -228,7 +228,7 @@ public class BayouServer<K, V>
 
 	public boolean isCreated()
 	{
-		synchronized( database )
+		synchronized ( database )
 		{
 			return serverID != null;
 		}
@@ -236,7 +236,7 @@ public class BayouServer<K, V>
 
 	public void add( K key, V value )
 	{
-		synchronized( database )
+		synchronized ( database )
 		{
 			if ( serverID == null )
 				return;
@@ -251,7 +251,7 @@ public class BayouServer<K, V>
 
 	public void edit( K key, V value )
 	{
-		synchronized( database )
+		synchronized ( database )
 		{
 			if ( serverID == null )
 				return;
@@ -266,7 +266,7 @@ public class BayouServer<K, V>
 
 	public V get( K key )
 	{
-		synchronized( database )
+		synchronized ( database )
 		{
 			if ( serverID == null )
 				return null;
@@ -276,7 +276,7 @@ public class BayouServer<K, V>
 
 	public Map<K, V> getAll()
 	{
-		synchronized( database )
+		synchronized ( database )
 		{
 			if ( serverID == null )
 				return null;
@@ -286,7 +286,7 @@ public class BayouServer<K, V>
 
 	public void remove( K key )
 	{
-		synchronized( database )
+		synchronized ( database )
 		{
 			if ( serverID == null )
 				return;
@@ -305,7 +305,7 @@ public class BayouServer<K, V>
 
 	public int size()
 	{
-		synchronized( database )
+		synchronized ( database )
 		{
 			if ( serverID == null )
 				return 0;
@@ -315,7 +315,7 @@ public class BayouServer<K, V>
 
 	public ArrayList<InetSocketAddress> getAddressList()
 	{
-		synchronized( addresses )
+		synchronized ( addresses )
 		{
 			return (ArrayList<InetSocketAddress>)( addresses.clone() );
 		}
@@ -323,7 +323,7 @@ public class BayouServer<K, V>
 
 	public void setAddressList( ArrayList<InetSocketAddress> addresses )
 	{
-		synchronized( this.addresses )
+		synchronized ( this.addresses )
 		{
 			this.addresses = (ArrayList<InetSocketAddress>)( addresses.clone() );
 		}

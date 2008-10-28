@@ -21,54 +21,54 @@ public class BayouAEResponse<K, V> extends Message implements Serializable
 
 	}
 
-	private HashMap<K, V> getDatabase()
+	public HashMap<K, V> getDatabase()
 	{
 		return newDB;
 	}
 
-	private HashMap<ServerID, Long> getOmittedVector()
+	public HashMap<ServerID, Long> getOmittedVector()
 	{
 		return newOV;
 	}
 
-	private long getOSN()
+	public long getOSN()
 	{
 		return newOSN;
 	}
 
-	private LinkedList<WriteID> getCommits()
+	public LinkedList<WriteID> getCommitNotifications()
 	{
 		return newCommits;
 	}
 
-	private LinkedList<BayouWrite<K, V>> getWrites()
+	public LinkedList<BayouWrite<K, V>> getWrites()
 	{
 		return newWrites;
 	}
 
-	void addDatabase( HashMap<K, V> db )
+	public void addDatabase( HashMap<K, V> db )
 	{
 		newDB = db;
 	}
 
-	void addOmmittedVector( HashMap<ServerID, Long> ov )
+	public void addOmmittedVector( HashMap<ServerID, Long> ov )
 	{
 		newOV = ov;
 	}
 
-	void addOSN( long osn )
+	public void addOSN( long osn )
 	{
 		newOSN = osn;
 	}
 
-	void addCommitNotification( WriteID commit )
+	public void addCommitNotification( WriteID commit )
 	{
 		if ( newCommits == null )
 			newCommits = new LinkedList<WriteID>();
 		newCommits.add( commit );
 	}
 
-	void addWrite( BayouWrite<K, V> write )
+	public void addWrite( BayouWrite<K, V> write )
 	{
 		if ( newWrites == null )
 			newWrites = new LinkedList<BayouWrite<K, V>>();

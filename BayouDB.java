@@ -1,16 +1,15 @@
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.TreeSet;
 import java.util.Iterator;
+import java.util.ListIterator;
 import java.io.Serializable;
-import java.util.SortedSet;
-
-import java.util.ArrayList;
 
 public class BayouDB<K, V> implements Serializable
 {
     private HashMap<K, V> writeData;
-	private TreeSet<BayouWrite<K, V>> writeLog;
+	private LinkedList<BayouWrite<K, V>> writeLog;
 	private LinkedList<BayouWrite<K, V>> undoLog;
 
 	private long acceptStamp;
@@ -24,7 +23,7 @@ public class BayouDB<K, V> implements Serializable
 	public BayouDB()
 	{
 		writeData = new HashMap<K, V>();
-		writeLog = new TreeSet<BayouWrite<K, V>>();
+		writeLog = new LinkedList<BayouWrite<K, V>>();
 		undoLog = new LinkedList<BayouWrite<K, V>>();
 		acceptStamp = 0L;
 		modified = true;
@@ -33,7 +32,7 @@ public class BayouDB<K, V> implements Serializable
 	public BayouDB( int initialCapacity )
 	{
 		writeData = new HashMap<K, V>( initialCapacity );
-		writeLog = new TreeSet<BayouWrite<K, V>>();
+		writeLog = new LinkedList<BayouWrite<K, V>>();
 		undoLog = new LinkedList<BayouWrite<K, V>>();
 		acceptStamp = 0L;
 		modified = true;
@@ -42,7 +41,7 @@ public class BayouDB<K, V> implements Serializable
 	public BayouDB( int initialCapacity, float loadFactor )
 	{
 		writeData = new HashMap<K, V>( initialCapacity, loadFactor );
-		writeLog = new TreeSet<BayouWrite<K, V>>();
+		writeLog = new LinkedList<BayouWrite<K, V>>();
 		undoLog = new LinkedList<BayouWrite<K, V>>();
 		acceptStamp = 0L;
 		modified = true;
@@ -107,12 +106,86 @@ public class BayouDB<K, V> implements Serializable
 
 	}
 
-	public void applyUpdates( BayouAEResponse<K, V> updates )
+	public synchronized void applyUpdates( BayouAEResponse<K, V> updates )
 	{
+		HashMap<K, V> db = updates.getDatabase();
+		if ( db != null )
+		{
+			writeData = db;
+			omittedVector = updates.getOmittedVector();
+			OSN = updates.getOSN();
+		}
 
+		LinkedList<WriteID> cn = updates.getCommitNotifications();
+		if ( cn != null )
+		{
+			Collections.sort( cn );
+			ListIterator<BayouWrite<K, V>> iter = writeLog.listIterator();
+			Iterator<WriteID> citer = cn.iterator();
+			LinkedList<BayouWrite<K, V>> list = new LinkedList<BayouWrite<K, V>>();
+outer:
+			while ( citer.hasNext() )
+			{
+				WriteID cid = citer.next();
+				while ( iter.hasNext() )
+				{
+					BayouWrite<K, V> item = iter.next();
+					WriteID id = item.getWriteID();
+					if ( id.getAcceptStamp() == cid.getAcceptStamp() &&
+						id.getServerID().equals( cid.getServerID() ) )
+					{
+						id.setCSN( cid.getCSN() );
+						iter.remove();
+						list.add( item );
+						continue outer;
+					}
+				}
+				break;
+			}
+
+			iter = writeLog.listIterator();
+			Iterator<BayouWrite<K, V>> liter = list.iterator();
+outer:
+			while ( liter.hasNext() )
+			{
+				BayouWrite<K, V> commit = liter.next();
+				while ( iter.hasNext() )
+				{
+					BayouWrite<K, V> item = iter.next();
+					if ( item.compareTo( commit ) <= 0 )
+						continue;
+					iter.add( item );
+					iter.set( commit );
+					continue outer;
+				}
+				break;
+			}
+		}
+
+		LinkedList<BayouWrite<K, V>> w = updates.getWrites();
+		if ( w != null )
+		{
+			ListIterator<BayouWrite<K, V>> iter = writeLog.listIterator();
+			Iterator<BayouWrite<K, V>> witer = w.iterator();
+outer:
+			while ( witer.hasNext() )
+			{
+				BayouWrite<K, V> write = witer.next();
+				while ( iter.hasNext() )
+				{
+					BayouWrite<K, V> item = iter.next();
+					if ( item.compareTo( write ) <= 0 )
+						continue;
+					iter.add( write );
+					iter.set( write );
+					continue outer;
+				}
+				break;
+			}
+		}
 	}
 
-	public void addWrite( BayouWrite<K, V> write )
+	public synchronized void addWrite( BayouWrite<K, V> write )
 	{
 		writeLog.add( write );
 		acceptStamp += 1L;
@@ -124,7 +197,7 @@ public class BayouDB<K, V> implements Serializable
 		return acceptStamp;
 	}
 
-	public HashMap<K, V> getMap()
+	public synchronized HashMap<K, V> getMap()
 	{
 		HashMap<K, V> entries = (HashMap<K, V>)writeData.clone();
 		Iterator<BayouWrite<K, V>> iter = writeLog.iterator();
@@ -139,7 +212,7 @@ public class BayouDB<K, V> implements Serializable
 
 	private boolean applyWrite( BayouWrite<K, V> write, HashMap<K, V> data )
 	{
-		switch( write.getType() )
+		switch ( write.getType() )
 		{
 			case ADD:
 				if ( data.containsKey( write.getKey() ) )
