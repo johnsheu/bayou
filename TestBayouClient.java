@@ -11,6 +11,10 @@ public class TestBayouClient extends BayouClient{
 		client.breakOurSystem();
 	}
 
+	public TestBayouClient(int port){
+		super(port, new Scanner(System.in));
+	}
+
 	/**
 	 * Creates a random song and adds it to the playlist.
 	 */
@@ -25,11 +29,7 @@ public class TestBayouClient extends BayouClient{
 		if(RN.nextBoolean())
 			removeSong(createRandomSong());
 		else
-			removeSong(getRandomSong());
-	}
-
-	private Song getRandomSong() {
-		return null;
+			removeSong(getPlaylist().getRandomSong(RN));
 	}
 
 	/**
@@ -110,10 +110,6 @@ public class TestBayouClient extends BayouClient{
 		try {Thread.sleep(500);}
 			catch (InterruptedException e) {}
 		}
-	}
-	
-	public TestBayouClient(int port){
-		super(port, new Scanner(System.in));
 	}
 	
 }

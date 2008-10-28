@@ -295,7 +295,9 @@ public class BayouDB<K, V> implements Serializable
 	{
 		renderedData = new HashMap<K, V>( writeData );
 		
-		for ( BayouWrite<K, V> write : writeLog )
+		//"commitBoundaryIndex" is a fake write used to separate all the committed writes in the treeSet from all the uncommitted ones.
+		BayouWrite<K, V> commitBoundaryIndex = new BayouWrite<K, V>(null, null, null, new WriteID(-1,null));
+		for( BayouWrite<K, V> write : writeLog.tailSet( commitBoundaryIndex, false ) )
 			applyWrite( write, renderedData );
 	}
 

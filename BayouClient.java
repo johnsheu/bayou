@@ -3,7 +3,7 @@ import java.util.Scanner;
 
 public class BayouClient{
 
-    private BayouServer m_server;
+    private BayouServer<String, String> m_server;
     private Scanner m_scanner;
     
     public static void main(String[] args){
@@ -30,6 +30,7 @@ public class BayouClient{
 	private void startUI() {
     	while(true){
 	    	System.out.print(
+	    			"0 - Connect to a Network Manually \n" +
 	    			"1 - Add Song \n" +
 	    			"2 - Modify Song \n" +
 	    			"3 - Remove Song By Name \n" +
@@ -48,11 +49,15 @@ public class BayouClient{
 	    	case 3: removeSong(prompt(m_scanner, "title")); break;
 	    	case 4: listSongs(); break;
 	    	case 5: exit(); break;
+	    	case 0: //manualConnectPrompt(); 
+	    		break;
 	    	default: System.out.println("Invalid option."); break;}}}
     
-	//TODO :: Retire server and exit system.  Use different exit statuses and messages if retire fails.  Implement on BayouServer.
     private void exit() {
+    	System.out.println("Attempting to retire from the system.");
+    	m_server.retire();
     	m_scanner.close();
+    	System.out.println("You have left the system.");
     	System.out.println("Goodbye, we'll miss you.");
     	System.exit(0);}
 
@@ -66,18 +71,24 @@ public class BayouClient{
 		System.out.print("Enter " + promptText + ": ");
 		return m_scanner.nextLine();}
 
-	public void addSong(Song song){}
-    public void removeSong(String title){}
+	public void addSong(Song song){m_server.add(song.getName(), song.getURL());}
+    public void removeSong(String title){m_server.remove(title);}
     public void removeSong(Song song){removeSong(song.getName());}
-    public void modifySong(Song song){}
+    public void modifySong(Song song){m_server.edit(song.getName(), song.getURL());}
 
     //TODO :: Implement on BayouServer
 	protected Playlist getPlaylist(){
-		return new Playlist();}
+		return new Playlist(m_server.getAll());}
 
     public BayouClient(int port, Scanner inputReader){
-    	m_server = new BayouServer(port);
+    	m_server = new BayouServer<String, String>(port);
+    	m_server.start();
+    	m_server.create();
     	m_scanner = inputReader;}
     
-    public BayouClient(BayouServer server){
-    	m_server = server;}}
+    public BayouClient(BayouServer<String, String> server){
+    	m_server = server;
+    	if(!m_server.isStarted())
+    		m_server.start();
+    	if(!m_server.isCreated())
+    		m_server.create();}}
