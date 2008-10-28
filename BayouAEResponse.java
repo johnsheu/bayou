@@ -51,7 +51,7 @@ public class BayouAEResponse<K, V> extends Message implements Serializable
 		newDB = db;
 	}
 
-	public void addOmmittedVector( HashMap<ServerID, Long> ov )
+	public void addOmittedVector( HashMap<ServerID, Long> ov )
 	{
 		newOV = ov;
 	}
