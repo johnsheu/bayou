@@ -9,8 +9,6 @@ import java.util.HashMap;
 
 public class BayouManager
 {
-	private static final Long serialVersionUID = 1L;
-
 	private Communicator communicator;
 
 	private HashMap<String, InetSocketAddress> aliases;
@@ -244,6 +242,46 @@ public class BayouManager
 			ManagerMessage message = new ManagerMessage();
 			message.setAddress( address );
 			message.makeMessage( ManagerMessage.Type.SET_UPDATING,
+				null, value, null );
+			communicator.sendMessage( message );
+			return;
+		}
+		else if ( args[0].equalsIgnoreCase( "get_talking" ) )
+		{
+			if ( args.length != 2 )
+			{
+				System.out.print( "get_talking <host:port>|<alias>\n" );
+				return;
+			}
+
+			InetSocketAddress address = getAddress( args[1] );
+			if ( address == null )
+				return;
+
+			ManagerMessage message = new ManagerMessage();
+			message.setAddress( address );
+			message.makeMessage( ManagerMessage.Type.GET_TALKING,
+				null, null, null );
+			Message reply = getMessageReply( message );
+			System.out.print( reply.toString() + '\n' );
+			return;
+		}
+		else if ( args[0].equalsIgnoreCase( "set_talking" ) )
+		{
+			if ( args.length != 3 )
+			{
+				System.out.print( "set_talking <host:port>|<alias> <\"true\"|\"false\">\n" );
+				return;
+			}
+
+			boolean value = Boolean.parseBoolean( args[2] );
+			InetSocketAddress address = getAddress( args[1] );
+			if ( address == null )
+				return;
+
+			ManagerMessage message = new ManagerMessage();
+			message.setAddress( address );
+			message.makeMessage( ManagerMessage.Type.SET_TALKING,
 				null, value, null );
 			communicator.sendMessage( message );
 			return;

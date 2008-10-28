@@ -16,7 +16,8 @@ public class ServerID implements Comparable<ServerID>, Serializable
 	{
 		this.serverID = serverID;
 		this.acceptStamp = acceptStamp;
-		this.hashCode = serverID.hashCode() * 31 + acceptStamp.hashCode();
+		this.hashCode = serverID != null ? serverID.hashCode() * 31 + acceptStamp.hashCode()
+			: acceptStamp.hashCode();
 	}
 
 	public boolean equals( Object o )

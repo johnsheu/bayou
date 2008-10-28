@@ -1,6 +1,4 @@
-import java.io.Serializable;
-
-public class Song implements Serializable, Comparable<Song>
+public class Song implements Comparable<Song>
 {
 	private String name;
 

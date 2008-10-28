@@ -1,16 +1,15 @@
 import java.util.ArrayList;
 import java.util.Map;
-import java.util.HashMap;
+import java.util.Random; 
 import java.net.InetSocketAddress;
-import java.io.Serializable;
 
 public class BayouServer<K, V>
 {
 	private static final long serialVersionUID = 1L;
 
-	private class BayouServerThread extends Thread
+	private class BayouServerComm extends Thread
 	{
-		public BayouServerThread()
+		public BayouServerComm()
 		{
 
 		}
@@ -21,16 +20,7 @@ public class BayouServer<K, V>
 			{
 				try
 				{
-					sleep( 100 );
-				}
-				catch ( InterruptedException ex )
-				{
-					return;
-				}
-
-				Message message;
-				while ( ( message = communicator.readMessage() ) != null )
-				{
+					Message message = communicator.readMessageBlocking();
 					//  Do whatever the message requests us to do
 					if ( message instanceof ManagerMessage )
 					{
@@ -119,13 +109,51 @@ public class BayouServer<K, V>
 						database.applyUpdates( msg );
 					}
 				}
+				catch ( InterruptedException ex )
+				{
+					return;
+				}
+			}
+		}
+	}
+	
+	private class BayouServerActor extends Thread
+	{
+		Random random = null;
+		
+		public BayouServerActor()
+		{
+			random = new Random();
+		}
+		
+		public void run()
+		{
+			while ( !isInterrupted() )
+			{
+				synchronized( addresses )
+				{
+					BayouAERequest message = database.makeRequest();
+					message.setAddress( addresses.get( random.nextInt( addresses.size() ) ) );
+					communicator.sendMessage( message );
+				}
+				
+				try
+				{
+					sleep( sleepTime );
+				}
+				catch ( InterruptedException ex )
+				{
+					return;
+				}
 			}
 		}
 	}
 
 	private Communicator communicator = null;
 
-	private BayouServerThread serverThread = null;
+	private BayouServerComm serverComm = null;
+	
+	private BayouServerActor serverAct = null;
 
 	private BayouDB<K, V> database = null;
 
@@ -136,6 +164,8 @@ public class BayouServer<K, V>
 	private ArrayList<InetSocketAddress> addresses = null;
 
 	private ServerID serverID = null;
+	
+	private long sleepTime = 100L;
 
 	public BayouServer( int port )
 	{
@@ -144,31 +174,20 @@ public class BayouServer<K, V>
 		addresses = new ArrayList<InetSocketAddress>();
 	}
 
-	public BayouServer( int port, int initialCapacity )
-	{
-		database = new BayouDB<K, V>( initialCapacity );
-		communicator = new Communicator( port );
-		addresses = new ArrayList<InetSocketAddress>();
-	}
-
-	public BayouServer( int port, int initialCapacity, float loadFactor )
-	{
-		database = new BayouDB<K, V>( initialCapacity, loadFactor );
-		communicator = new Communicator( port );
-		addresses = new ArrayList<InetSocketAddress>();
-	}
-
 	public void start()
 	{
 		synchronized ( communicator )
 		{
-			if ( serverThread != null )
+			if ( serverComm != null )
 				return;
 
 			communicator.start();
 
-			serverThread = new BayouServerThread();
-			serverThread.start();
+			serverComm = new BayouServerComm();
+			serverComm.start();
+			
+			serverAct = new BayouServerActor();
+			serverAct.start();
 		}
 	}
 
@@ -176,20 +195,30 @@ public class BayouServer<K, V>
 	{
 		synchronized ( communicator )
 		{
-			if ( serverThread == null )
+			if ( serverComm == null )
 				return;
 
-			serverThread.interrupt();
+			serverComm.interrupt();
+			serverAct.interrupt();
 
 			communicator.stop();
 
 			try
 			{
-				serverThread.join();
+				serverComm.join();
 			}
 			catch ( InterruptedException ex )
 			{
 
+			}
+			
+			try
+			{
+				serverAct.join();
+			}
+			catch ( InterruptedException ex )
+			{
+				
 			}
 		}
 	}
@@ -198,7 +227,7 @@ public class BayouServer<K, V>
 	{
 		synchronized ( communicator )
 		{
-			return serverThread != null;
+			return serverComm != null;
 		}
 	}
 

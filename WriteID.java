@@ -104,8 +104,7 @@ public class WriteID implements Comparable<WriteID>, Serializable
 
 	public String toString()
 	{
-		return "<#:" + ( CSN != Long.MAX_VALUE ? CSN : ( acceptStamp + " , S:" +
-			serverID ) ) + ">";
+		return "<CSN:" + CSN + ", AS: " + acceptStamp + ", S:" + serverID + ">";
 	}
 }
 

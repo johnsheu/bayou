@@ -37,6 +37,10 @@ public class ManagerMessage extends Message implements Serializable
 		SET_TALKING,
 		GET_UPDATING,
 		SET_UPDATING,
+		GET_SLEEPTIME,
+		SET_SLEEPTIME,
+		GET_CACHING,
+		SET_CACHING,
 		GET_ADDRESSES,
 		SET_ADDRESSES,
 		RETIRE,
@@ -44,6 +48,8 @@ public class ManagerMessage extends Message implements Serializable
 		DB_DUMP,
 		IS_TALKING,
 		IS_UPDATING,
+		IS_SLEEPTIME,
+		IS_CACHING,
 		ADDRESSES_DUMP;
 	}
 
