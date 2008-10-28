@@ -1,5 +1,4 @@
 import java.net.Socket;
-import java.net.ServerSocket;
 import java.nio.channels.ServerSocketChannel;
 import java.net.InetSocketAddress;
 import java.nio.channels.ClosedByInterruptException;
@@ -27,13 +26,13 @@ public class Communicator
 		public SenderThread( int port )
 		{
 			this.port = port;
+
+			//  Java VM should not wait for thread to die naturally
+			setDaemon( true );
 		}
 
 		public void run()
 		{
-			//  Java VM should not wait for thread to die naturally
-			setDaemon( true );
-
 			while ( !isInterrupted() )
 			{
 				Message message = null;
@@ -92,13 +91,13 @@ public class Communicator
 		public ReceiverThread( int port )
 		{
 			this.port = port;
+
+			//  Java VM should not wait for thread to die naturally
+			setDaemon( true );
 		}
 
 		public void run()
 		{
-			//  Java VM should not wait for thread to die naturally
-			setDaemon( true );
-
 			//  Socket setup
 			ServerSocketChannel sschannel = null;
 			try
@@ -138,7 +137,6 @@ public class Communicator
 					ObjectInputStream oos =
 						new ObjectInputStream( socket.getInputStream() );
 					Object o = oos.readObject();
-					Message m = (Message)o;
 					receiverQueue.offer( (Message)o );
 				}
 				catch ( IOException ex )
@@ -197,8 +195,6 @@ public class Communicator
 	public void sendMessage( Message message )
 	{
 		senderQueue.offer( message );
-		//  Poke the thread to send immediately
-		sender.interrupt();
 	}
 
 	/**
