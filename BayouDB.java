@@ -8,7 +8,7 @@ import java.io.Serializable;
 
 public class BayouDB<K, V> implements Serializable
 {
-    private HashMap<K, V> writeData;
+	private HashMap<K, V> writeData;
 	private LinkedList<BayouWrite<K, V>> writeLog;
 	private LinkedList<BayouWrite<K, V>> undoLog;
 
@@ -50,59 +50,59 @@ public class BayouDB<K, V> implements Serializable
 	public BayouAEResponse<K, V> getUpdates( BayouAERequest request )
 	{
 		BayouAEResponse<K, V> response = new BayouAEResponse<K, V>();
-	/*stub*/
-        /*Note: Changes in the returned set are reflected in this set*/
+		/*stub*/
+		/*Note: Changes in the returned set are reflected in this set*/
 
-        Iterator<ServerID> servers = sendVersionVector.keySet().iterator();
+	        Iterator<ServerID> servers = sendVersionVector.keySet().iterator();
 
-        TreeSet<BayouWrite> updates = new TreeSet<BayouWrite>();
+	        TreeSet<BayouWrite> updates = new TreeSet<BayouWrite>();
 
-        //KAREN - handle case with CSN
-        if( sendCSN.compareTo( recvCSN ) > 0 )
-	{
-	    
-	}
-
-        WriteID firstUncommittedWID = new WriteID( new Long( 0 ), new ServerID( null, new Long( 0 )));
-        BayouWrite firstUncommitted = new BayouWrite( "", "", BayouWrite.Type.EDIT, firstUncommittedWID );
-        TreeSet<BayouWrite> uncommittedWrites = new TreeSet<BayouWrite>( writeLog.tailSet( firstUncommitted ));
-
-	BayouWrite write;
-	Long writeAcceptStamp;
-	Long sendAcceptStamp;
-	Long recvAcceptStamp;
-	ServerID writeServer;
-	ServerID server;
-	Iterator<BayouWrite> writes;
-	boolean aboveRange;
-        while( servers.hasNext() )
-	{
-		server = servers.next();
-
-		aboveRange = true;
-		writes = uncommittedWrites.descendingIterator();
-		while( writes.hasNext() && aboveRange )
+	        //KAREN - handle case with CSN
+	        if( sendCSN.compareTo( recvCSN ) > 0 )
 		{
-		    write = writes.next();
-		    writeAcceptStamp = write.getWriteID().getAcceptStamp();
-		    sendAcceptStamp  = sendVersionVector.get( server );
-		    recvAcceptStamp  = recvVersionVector.get( server );
-		    
-		    if( writeAcceptStamp > recvAcceptStamp )
-		    {
-			writeServer = write.getWriteID().getServerID() ;
-			if( writeAcceptStamp < sendAcceptStamp && server.equals( writeServer ))
-			{
-			    updates.add( write );
-			    aboveRange = false;
-			}
-		    }
-		    else
-			aboveRange = false;
+
 		}
 
-	}
-        return updates;
+		WriteID firstUncommittedWID = new WriteID( new Long( 0 ), new ServerID( null, new Long( 0 )));
+		BayouWrite firstUncommitted = new BayouWrite( "", "", BayouWrite.Type.EDIT, firstUncommittedWID );
+		TreeSet<BayouWrite> uncommittedWrites = new TreeSet<BayouWrite>( writeLog.tailSet( firstUncommitted ));
+
+		BayouWrite write;
+		Long writeAcceptStamp;
+		Long sendAcceptStamp;
+		Long recvAcceptStamp;
+		ServerID writeServer;
+		ServerID server;
+		Iterator<BayouWrite> writes;
+		boolean aboveRange;
+	        while( servers.hasNext() )
+		{
+			server = servers.next();
+
+			aboveRange = true;
+			writes = uncommittedWrites.descendingIterator();
+			while( writes.hasNext() && aboveRange )
+			{
+				write = writes.next();
+				writeAcceptStamp = write.getWriteID().getAcceptStamp();
+				sendAcceptStamp  = sendVersionVector.get( server );
+				recvAcceptStamp  = recvVersionVector.get( server );
+		    
+				if( writeAcceptStamp > recvAcceptStamp )
+				{
+					writeServer = write.getWriteID().getServerID() ;
+					if( writeAcceptStamp < sendAcceptStamp && server.equals( writeServer ))
+					{
+					    updates.add( write );
+					    aboveRange = false;
+					}
+				}
+				else
+					aboveRange = false;
+			}
+
+		}
+	        return updates;
 
 	}
 
