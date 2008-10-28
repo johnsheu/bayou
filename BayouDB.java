@@ -235,12 +235,12 @@ public class BayouDB<K, V> implements Serializable
 				while ( witer.hasNext() )
 				{
 					BayouWrite<K, V> write = witer.next();
-					writeLog.add( write );
 					write.getWriteID().setCSN( CSN++ );
 					WriteID wid = write.getWriteID();
 					Long as = versionVector.get( wid.getServerID() );
 					if ( as == null || as.compareTo( wid.getAcceptStamp() ) < 0 )
 						versionVector.put( wid.getServerID(), wid.getAcceptStamp() );
+					writeLog.add( write );
 				}
 			}
 		}
@@ -270,6 +270,8 @@ public class BayouDB<K, V> implements Serializable
 	public synchronized void addWrite( BayouWrite<K, V> write )
 	{
 		modified = true;
+		if ( primary )
+			write.getWriteID().setCSN( CSN++ );
 		writeLog.add( write );
 		acceptStamp += 1L;
 		WriteID id = write.getWriteID();
@@ -395,6 +397,8 @@ public class BayouDB<K, V> implements Serializable
 		BayouDB<String, String> db = new BayouDB<String, String>();
 		ServerID self = new ServerID( null, 1L );
 		ServerID other = new ServerID( null, 2L );
+		
+		//db.setPrimary( true );
 		
 		db.addWrite( new BayouWrite<String, String>(
 			"song1", "http://www.example1.com", BayouWrite.Type.ADD,
