@@ -182,12 +182,17 @@ public class TestBayou
 			wid2  = new WriteID( 2L, 2L, sid1 ),
 			wid3  = new WriteID( 3L, 1L, sid2 ),
 			wid4  = new WriteID( 4L, 1L, sid3 ),
-			wid5  = new WriteID( 5L, 2L, sid2 ),
-			wid6  = new WriteID( 2L, sid3 ),
-			wid7  = new WriteID( 3L, sid2 ),
-			wid8  = new WriteID( 4L, sid2 ),
-			wid9  = new WriteID( 3L, sid3 ),
-			wid10 = new WriteID( 4L, sid3);
+			wid5  = new WriteID( 5L, 1L, sid4 ),
+			wid6  = new WriteID( 6L, 2L, sid2 ),
+			wid7  = new WriteID( 7L, 2L, sid4 ),
+			wid8  = new WriteID( 2L, sid3 ),
+			wid9  = new WriteID( 3L, sid1 ),
+			wid10 = new WriteID( 3L, sid2 ),
+			wid11 = new WriteID( 3L, sid3 ),
+			wid12 = new WriteID( 3L, sid4 ),
+			wid13 = new WriteID( 4L, sid2 ),
+			wid14 = new WriteID( 4L, sid3 ),
+			wid15 = new WriteID( 5L, sid2 );
 
 
 		BayouAEResponse resp = new BayouAEResponse();		
@@ -202,39 +207,99 @@ public class TestBayou
 		resp.addWrite( new BayouWrite<String, String> ("", "", BayouWrite.Type.EDIT, wid8  ));
 		resp.addWrite( new BayouWrite<String, String> ("", "", BayouWrite.Type.EDIT, wid9  ));
 		resp.addWrite( new BayouWrite<String, String> ("", "", BayouWrite.Type.EDIT, wid10 ));
+		resp.addWrite( new BayouWrite<String, String> ("", "", BayouWrite.Type.EDIT, wid11 ));
+		resp.addWrite( new BayouWrite<String, String> ("", "", BayouWrite.Type.EDIT, wid12 ));
+		resp.addWrite( new BayouWrite<String, String> ("", "", BayouWrite.Type.EDIT, wid13 ));
+		resp.addWrite( new BayouWrite<String, String> ("", "", BayouWrite.Type.EDIT, wid14 ));
+		resp.addWrite( new BayouWrite<String, String> ("", "", BayouWrite.Type.EDIT, wid15 ));
 
+		//db.setTruncate( 1L );
 		db.applyUpdates( resp );
 
 		HashMap<ServerID, Long> versionVector = new HashMap<ServerID, Long>();
 		
 		versionVector.put( sid1, 2L );
-		versionVector.put( sid2, 1L );
-		versionVector.put( sid3, 3L );
+		versionVector.put( sid2, 3L );
+		versionVector.put( sid3, 4L );
+		versionVector.put( sid4, 0L );
 		
 		BayouAERequest request = new BayouAERequest( 1L, 4L, versionVector );
 
 		resp = db.getUpdates( request );
 
-		Iterator<BayouWrite<String, String>> writes = resp.getWrites().iterator();
+		printResponse( resp );
+	}
 
-		WriteID wid;
+	private void printResponse( BayouAEResponse resp )
+	{
+		System.out.println( "\n\n" );
+		System.out.println( "NEW RESPONSE" );
 
-		System.out.println();
-		while( writes.hasNext() )
+		//Print out writes
+		LinkedList<BayouWrite<String, String>> writeList = resp.getWrites();
+
+		if( writeList == null )
+		    System.out.println( "No writes sent." );
+		else
 		{
-		    wid = writes.next().getWriteID();
-		    System.out.println( wid );
+			Iterator<BayouWrite<String, String>> writes = writeList.iterator();
+			WriteID wid;
+
+			System.out.println( "Writes sent: " );
+		
+
+
+			System.out.println();
+			while( writes.hasNext() )
+			    {
+				wid = writes.next().getWriteID();
+				System.out.println( wid );
+			    }
+		}
+		System.out.println();
+
+		//Print out commit notifications
+		LinkedList<WriteID> noteList = resp.getCommitNotifications();
+		if( noteList == null )
+			System.out.println( "No Commit Notifications." );
+		else
+		{
+			System.out.println( "Commit Notifications: " );
+			Iterator<WriteID> notes = noteList.iterator();
+
+			while( notes.hasNext() )
+			{
+			    System.out.println( notes.next() );
+			}
+
+			System.out.println();		
 		}
 
-		Iterator<LinkedList<WriteID>> notes = resp.getCommitNotifications().iterator();
-
-
 		System.out.println();
-		while( notes.hasNext() )
-		{
-		    System.out.println( notes.next() );
-		}
 
-		System.out.println();		
+		//Print out database
+		HashMap<String, String> map = resp.getDatabase();
+
+		if( map != null )
+			System.out.println( "Database sent is: \n" + map); 
+		else
+			System.out.println( "No database sent." );
+		System.out.println();
+
+		//Print out OSN
+		long OSN = resp.getOSN();
+		if( OSN == -1 )
+		    System.out.println( "No OSN sent." );
+		else
+		    System.out.println( "OSN is: " + OSN );
+		System.out.println();
+
+		//Print out omitted version vector
+		HashMap<ServerID, Long> omap = resp.getOmittedVector();
+		if( omap == null )
+		    System.out.println( "No omitted version vector sent." );
+		else
+		    System.out.println( "Omitted version vector is:\n" + omap );
+		System.out.println();
 	}
 }

@@ -86,9 +86,7 @@ public class BayouDB<K, V> implements Serializable
 
 		    response.addDatabase( writeData );
 		    response.addOSN( OSN );
-
-		    //KAREN - need to set version vector and CSN 
-		    
+		    response.addOmittedVector( omittedVector );
 		}
 
 	        if( CSN > recvCSN )
@@ -115,10 +113,11 @@ public class BayouDB<K, V> implements Serializable
 					writeAcceptStamp = wid.getAcceptStamp();
 					recvAcceptStamp = recvVersionVector.get( wid.getServerID() );
 
-					if( recvAcceptStamp > writeAcceptStamp )
-						response.addWrite( write );
+					if( recvAcceptStamp >= writeAcceptStamp )
+						response.addCommitNotification( wid );		
 					else
-						response.addCommitNotification( wid );
+						response.addWrite( write );
+				
 				}
 			}
 		}
