@@ -147,7 +147,6 @@ public class BayouDB<K, V> implements Serializable
 
 		}
 	        return response;
-
 	}
 
 	public synchronized void applyUpdates( BayouAEResponse<K, V> updates )
