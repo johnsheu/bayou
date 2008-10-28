@@ -153,10 +153,7 @@ public class BayouDB<K, V> implements Serializable
 						}
 					}
 					else
-					{
 						outOfRange = true;
-						System.out.println( "KAREN IN ELSE" );
-					}
 				}
 			}
 
