@@ -10,13 +10,6 @@ public class WriteID implements Comparable<WriteID>, Serializable
 
 	private long CSN = Long.MAX_VALUE;
 
-	public WriteID( long CSN )
-	{
-		this.CSN = CSN;
-		acceptStamp = Long.MAX_VALUE;
-		serverID = null;
-	}
-
 	public WriteID( long acceptStamp, ServerID server )
 	{
 		CSN = Long.MAX_VALUE;
@@ -34,22 +27,15 @@ public class WriteID implements Comparable<WriteID>, Serializable
 	public void setCSN( long CSN )
 	{
 		this.CSN = CSN;
-		acceptStamp = Long.MAX_VALUE;
-		serverID = null;
 	}
 
-	public void setAcceptStamp( long acceptStamp, ServerID server )
+	public void setAcceptStamp( long acceptStamp )
 	{
-		CSN = Long.MAX_VALUE;
 		this.acceptStamp = acceptStamp;
-		serverID = server;
 	}
-
-	public void setCommitNotification( long CSN, long acceptStamp,
-		ServerID server )
+	
+	public void setServerID( ServerID server )
 	{
-		this.CSN = CSN;
-		this.acceptStamp = acceptStamp;
 		serverID = server;
 	}
 
@@ -81,18 +67,14 @@ public class WriteID implements Comparable<WriteID>, Serializable
 			return false;
 
 		WriteID other = (WriteID)o;
-		if ( this.serverID == null )
-			return other.serverID == null &&
-				this.CSN == other.CSN;
-		if ( other.serverID == null )
-			return false;
-		return this.acceptStamp == other.acceptStamp &&
+		return this.CSN == other.CSN &&
+			this.acceptStamp == other.acceptStamp &&
 			this.serverID.equals( other.serverID );
 	}
 
 	public int hashCode()
 	{
-		if ( serverID == null )
+		if ( CSN != Long.MAX_VALUE )
 			return ( (int)CSN ^ (int)( CSN >> 32 ) );
 		else
 			return serverID.hashCode() * 31 +
@@ -103,25 +85,14 @@ public class WriteID implements Comparable<WriteID>, Serializable
 	{
 		if ( this == other )
 			return 0;
-
-		if ( this.serverID == null )
+		
+		if ( this.CSN != other.CSN )
 		{
-			if ( other.serverID == null )
-			{
-				//  Both are committed writes
-				if ( this.CSN == other.CSN )
-					return 0;
-				else if ( this.CSN < other.CSN )
-					return -1;
-				return 1;
-			}
-			else
-				//  This is a committed write, other isn't
+			if ( this.CSN < other.CSN )
 				return -1;
+			else
+				return 1;
 		}
-		else if ( other.serverID == null )
-			//  This isn't a committed write, other is
-			return 1;
 
 		//  Both are uncommitted writes
 		if ( this.acceptStamp == other.acceptStamp )
