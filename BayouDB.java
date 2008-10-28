@@ -3,7 +3,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.TreeSet;
 import java.util.Iterator;
-import java.util.ListIterator;
 import java.io.Serializable;
 
 public class BayouDB<K, V> implements Serializable
@@ -35,15 +34,17 @@ public class BayouDB<K, V> implements Serializable
 		acceptStamp = 0L;
 	}
 	
-	public BayouDB(boolean useCaching)
+	public BayouDB( boolean useCaching )
 	{
 		this();
 		caching = useCaching;
 	}
+
 	public BayouAEResponse<K, V> getUpdates( BayouAERequest request )
 	{
 		BayouAEResponse<K, V> response = new BayouAEResponse<K, V>();
-
+		return response;
+/*
 	        Iterator<ServerID> servers = versionVector.keySet().iterator();
 
 		HashMap<ServerID, Long> recvVersionVector = request.getRecvVV();
@@ -133,10 +134,11 @@ public class BayouDB<K, V> implements Serializable
 
 		}
 	        return response;
+*/
 	}
 
 	public synchronized void applyUpdates( BayouAEResponse<K, V> updates )
-	{/*
+	{
 		//  Full DB transfer
 		HashMap<K, V> db = updates.getDatabase();
 		if ( db != null )
@@ -145,7 +147,7 @@ public class BayouDB<K, V> implements Serializable
 			omittedVector = updates.getOmittedVector();
 			OSN = updates.getOSN();
 
-			ListIterator<BayouWrite<K, V>> iter = writeLog.listIterator();
+			Iterator<BayouWrite<K, V>> iter = writeLog.iterator();
 			while ( iter.hasNext() )
 			{
 				BayouWrite<K, V> write = iter.next();
@@ -161,52 +163,18 @@ public class BayouDB<K, V> implements Serializable
 		{
 			//  Remove the writes to make committed from the write log
 			Collections.sort( cn );
-			ListIterator<BayouWrite<K, V>> iter = writeLog.iterator();
 			Iterator<WriteID> citer = cn.iterator();
-			LinkedList<BayouWrite<K, V>> list = new LinkedList<BayouWrite<K, V>>();
-outer:
 			while ( citer.hasNext() )
 			{
 				WriteID cid = citer.next();
-				while ( iter.hasNext() )
-				{
-					BayouWrite<K, V> item = iter.next();
-					WriteID id = item.getWriteID();
-					if ( id.getAcceptStamp() == cid.getAcceptStamp() &&
-						id.getServerID().equals( cid.getServerID() ) )
-					{
-						CSN = cid.getCSN();
-						id.setCSN( CSN );
-						iter.remove();
-						list.add( item );
-						continue outer;
-					}
-				}
-				break;
-			}
-
-			//  Add them back in, now as committed writes
-			iter = writeLog.listIterator();
-			Iterator<BayouWrite<K, V>> liter = list.iterator();
-outer:
-			while ( liter.hasNext() )
-			{
-				BayouWrite<K, V> commit = liter.next();
-				while ( iter.hasNext() )
-				{
-					BayouWrite<K, V> item = iter.next();
-					if ( item.compareTo( commit ) <= 0 )
-						continue;
-					WriteID id = commit.getWriteID();
-					if ( id.isCommitted() )
-						CSN = id.getCSN();
-					else
-						versionVector.put( id.getServerID(), id.getAcceptStamp() );
-					iter.add( item );
-					iter.set( commit );
-					continue outer;
-				}
-				break;
+				BayouWrite<K, V> item = new BayouWrite<K, V>( null, null,
+					BayouWrite.Type.ADD,
+					new WriteID( cid.getAcceptStamp(), cid.getServerID() ) );
+				item = writeLog.ceiling( item );
+				writeLog.remove( item );
+				CSN = cid.getCSN();
+				item.getWriteID().setCSN( CSN );
+				writeLog.add( item );
 			}
 		}
 
@@ -214,25 +182,15 @@ outer:
 		LinkedList<BayouWrite<K, V>> w = updates.getWrites();
 		if ( w != null )
 		{
-			ListIterator<BayouWrite<K, V>> iter = writeLog.listIterator();
 			Iterator<BayouWrite<K, V>> witer = w.iterator();
-outer:
 			while ( witer.hasNext() )
-			{
-				BayouWrite<K, V> write = witer.next();
-				while ( iter.hasNext() )
-				{
-					BayouWrite<K, V> item = iter.next();
-					if ( item.compareTo( write ) <= 0 )
-						continue;
-					iter.add( write );
-					iter.set( write );
-					continue outer;
-				}
-				break;
-			}
+				writeLog.add( witer.next() );
 		}
-	 */
+	}
+	
+	public synchronized BayouAERequest makeRequest()
+	{
+		return new BayouAERequest( OSN, CSN, versionVector );
 	}
 
 	public synchronized void addWrite( BayouWrite<K, V> write )
@@ -287,6 +245,29 @@ outer:
 				return false;
 		}
 		return true;
+	}
+	
+	private BayouWrite<K, V> flipWrite( BayouWrite<K, V> write, HashMap<K, V> data )
+	{
+		BayouWrite<K, V> flip = null;
+		switch( write.getType() )
+		{
+			case ADD:
+				flip = new BayouWrite<K, V>( write.getKey(), write.getValue(),
+					BayouWrite.Type.DELETE, write.getWriteID() );
+				break;
+			case EDIT:
+				flip = new BayouWrite<K, V>( write.getKey(), data.get( write.getKey() ),
+					BayouWrite.Type.EDIT, write.getWriteID() );
+				break;
+			case DELETE:
+				flip = new BayouWrite<K, V>( write.getKey(), data.get( write.getKey() ),
+					BayouWrite.Type.ADD, write.getWriteID() );
+				break;
+			default:
+				break;
+		}
+		return flip;
 	}
     
 	/*** methods for testing purposes only ***/
@@ -366,9 +347,26 @@ outer:
 			"song3", "http://www.example.3.com", BayouWrite.Type.EDIT,
 			new WriteID( db.getAcceptStamp(), self ) ) );
 		
+		db.addWrite( new BayouWrite<String, String>(
+			"song4", "http://www.example.4.com", BayouWrite.Type.EDIT,
+			new WriteID( db.getAcceptStamp(), self ) ) );
+		
 		BayouAEResponse<String, String> response = new BayouAEResponse<String, String>();
+		
+		response.addCommitNotification( new WriteID( 0L, 0L, self ) );
+		
+		response.addCommitNotification( new WriteID( 1L, 1L, self ) );
+		
+		response.addCommitNotification( new WriteID( 2L, 2L, self ) );
+		
+		response.addWrite( new BayouWrite<String, String>( "song5", "http://www.example5.com",
+			BayouWrite.Type.ADD, new WriteID( 3L, 0L, other ) ) );
+		
 		response.addWrite( new BayouWrite<String, String>( "song3", "", BayouWrite.Type.DELETE,
 			new WriteID( 4L, other ) ) );
+
+		response.addWrite( new BayouWrite<String, String>( "song4", "http://www.example4.com",
+			BayouWrite.Type.ADD, new WriteID( 5L, other ) ) );
 		
 		db.applyUpdates( response );
 		
