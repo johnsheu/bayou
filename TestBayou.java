@@ -10,7 +10,6 @@ public class TestBayou
     {
 	testServerID();
 	testBayouWrite();
-	testBayouWriteUpdateCSN();
     }
 
     public void testServerID()
@@ -143,119 +142,5 @@ public class TestBayou
 	result = b6.compareTo( b6 );
 	if( result != 0)
 	    System.out.println( "Exception BayouWrite 21.  Result is: " + result );
-	
-	/*
-	BigInteger commitSN2 = new BigInteger( "2" );
-
-
-	BigInteger csn = bw1.getCSN();
-	if( csn != null )
-	    System.out.println( "Exception 1" );
-	bw1.setCSN( commitSN1 );
-	csn = bw1.getCSN();
-	if( csn.intValue() != 1 )
-	    System.out.println( "Exception 2" );
-
-	
-	BayouWrite bw2 = new BayouWrite( update1, acceptStamp1, serverID1, writeType1 , commitSN2 );
-	
-	int result = bw1.compareTo( bw2 );
-	System.out.println(result);
-	if ( result > -1 )
-	    System.out.println( "Exception 3" );
-	result = bw2.compareTo( bw1 );
-	if ( result < 1 )
-	    System.out.println( "Exception 4" );
-
-	bw1 = new BayouWrite( update1, acceptStamp1, serverID1, writeType1 );
-	bw2 = new BayouWrite( update1, new BigInteger("2"), serverID1, writeType1 );
-	result = bw1.compareTo( bw2 );
-	if ( result > -1 )
-	    System.out.println( "Exception 5" );
-	result = bw2.compareTo( bw1 );
-	if ( result < 1 )
-	    System.out.println( "Exception 6" );
-
-	bw1 = new BayouWrite( update1, acceptStamp1, serverID1, writeType1 );
-	bw2 = new BayouWrite( update1, new BigInteger("2"), serverID2, writeType1 );
-	if ( result != 0 )
-	    System.out.println( "Exception 5" );
-	result = bw2.compareTo( bw1 );
-	if ( result != 0 )
-	    System.out.println( "Exception 6" );
-	
-
-	*/
-	
-	/*
-
-	public BayouWrite( ArrayList update, BigInteger acceptStamp, ServerID serverID, String writeType );
-        public BayouWrite( ArrayList update, BigInteger acceptStamp, ServerID serverID, String writeType, BigInteger commitSN );
-	getCNS();
-	getAcceptStamp();
-	getServerID();
-	setCNS();
-	compareTo();
-	*/
-    }
-	
-	public void testBayouWriteUpdateCSN()
-    {
-	/*
-	BayouDB db = new BayouDB();
-
-	BayouData updates = new BayouData();
-	BayouWrite.Type writeType = BayouWrite.Type.ADD;
-
-
-
-	Long as1 = new Long( "1" );
-	Long as2 = new Long( "2" );
-	Long as3 = new Long( "3" );
-
-	Long csn1 = new Long( "1" );
-	Long csn2 = new Long( "2" );
-	Long csn3 = new Long( "3" );
-	Long csn4 = new Long( "4" );
-	Long csn5 = new Long( "5" );
-	Long csn6 = new Long( "6" );
-	Long csn7 = new Long( "7" );
-
-	ServerID sid1 = new ServerID( null, new Long("1") );
-	ServerID sid2 = new ServerID( sid1, new Long("2") );
-	ServerID sid3 = new ServerID( sid1, new Long("3") );
-
-	WriteID wid1 = new WriteID( as1, sid1 );
-	wid1.setCSN( csn1 );
-	WriteID wid2 = new WriteID( as2, sid1 );
-	wid2.setCSN( csn2 );
-	WriteID wid3 = new WriteID( as1, sid2 );
-	wid3.setCSN( csn3 );
-	WriteID wid4 = new WriteID( as2, sid2);
-	wid4.setCSN( csn5 );
-	WriteID wid5 = new WriteID( as3, sid1 );
-	WriteID wid6 = new WriteID( as3, sid2 );
-	wid6.setCSN( csn7 );
-
-	BayouWrite b1 = new BayouWrite( updates, writeType, wid1 );
-	BayouWrite b2 = new BayouWrite( updates, writeType, wid2 );	
-	BayouWrite b3 = new BayouWrite( updates, writeType, wid3 );
-	BayouWrite b5 = new BayouWrite( updates, writeType, wid4 );
-	BayouWrite b6 = new BayouWrite( updates, writeType, wid5 );
-	BayouWrite b7 = new BayouWrite( updates, writeType, wid6 );
-
-	db.addWrite( b1 );
-	db.addWrite( b2 );
-	db.addWrite( b3 );
-	db.addWrite( b7 );
-	db.addWrite( b5 );
-	db.addWrite( b6 );
-
-	db.printTreeSet();
-
-	db.updateCSN( wid5, csn4 );
-
-	db.printTreeSet();
-	*/
     }
 }
