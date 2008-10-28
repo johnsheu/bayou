@@ -20,11 +20,13 @@ public class BayouDB<K, V> implements Serializable
 	private long CSN;
 	private long OSN;
 	
+	private boolean primary;
+	
 	//For caching current rendering of the playlist/map.
-	private boolean caching = false;
-	private HashMap<K, V> renderedData = null;
-	private boolean modified = true;
-	private long truncateLimit = 16L;
+	private boolean caching;
+	private HashMap<K, V> renderedData;
+	private boolean modified;
+	private long truncateLimit;
     
 	public BayouDB()
 	{
@@ -33,7 +35,12 @@ public class BayouDB<K, V> implements Serializable
 		undoLog = new LinkedList<BayouWrite<K, V>>();
 		versionVector = new HashMap<ServerID, Long>();
 		omittedVector = new HashMap<ServerID, Long>();
+		renderedData = null;
+		primary = false;
+		modified = true;
+		caching = false;
 		acceptStamp = 0L;
+		truncateLimit = 16L;
 	}
 	
 	public BayouDB( boolean useCaching )
@@ -184,7 +191,7 @@ public class BayouDB<K, V> implements Serializable
 					new WriteID( cid.getAcceptStamp(), cid.getServerID() ) );
 				item = writeLog.ceiling( item );
 				writeLog.remove( item );
-				CSN = cid.getCSN();
+				CSN = Math.max( CSN, cid.getCSN() );
 				item.getWriteID().setCSN( CSN );
 				writeLog.add( item );
 			}
@@ -195,12 +202,33 @@ public class BayouDB<K, V> implements Serializable
 		if ( w != null )
 		{
 			Iterator<BayouWrite<K, V>> witer = w.iterator();
-			while ( witer.hasNext() )
+			
+			if ( !primary )  //  Not the primary replica
 			{
-				BayouWrite<K, V> write = witer.next();
-				writeLog.add( write );
-				if ( write.getWriteID().isCommitted() )
-					CSN = write.getWriteID().getCSN();
+				while ( witer.hasNext() )
+				{
+					BayouWrite<K, V> write = witer.next();
+					writeLog.add( write );
+					if ( write.getWriteID().isCommitted() )
+						CSN = Math.max( CSN, write.getWriteID().getCSN() );
+					WriteID wid = write.getWriteID();
+					Long as = versionVector.get( wid.getServerID() );
+					if ( as == null || as.compareTo( wid.getAcceptStamp() ) < 0 )
+						versionVector.put( wid.getServerID(), wid.getAcceptStamp() );
+				}
+			}
+			else  //  Primary replica
+			{
+				while ( witer.hasNext() )
+				{
+					BayouWrite<K, V> write = witer.next();
+					writeLog.add( write );
+					write.getWriteID().setCSN( CSN++ );
+					WriteID wid = write.getWriteID();
+					Long as = versionVector.get( wid.getServerID() );
+					if ( as == null || as.compareTo( wid.getAcceptStamp() ) < 0 )
+						versionVector.put( wid.getServerID(), wid.getAcceptStamp() );
+				}
 			}
 		}
 		
@@ -302,6 +330,16 @@ public class BayouDB<K, V> implements Serializable
 				break;
 		}
 		return flip;
+	}
+	
+	public boolean isPrimary()
+	{
+		return primary;
+	}
+	
+	public void setPrimary( boolean primary )
+	{
+		this.primary = primary;
 	}
 
 	public boolean isCaching()
