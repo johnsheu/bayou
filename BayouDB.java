@@ -253,11 +253,11 @@ public class BayouDB<K, V> implements Serializable
 		for ( BayouWrite<K,V> write : subset )
 			applyWrite( write, writeData );
 		
-		if ( OSN < CSN - truncateLimit )
+		if ( OSN <= CSN - truncateLimit )
 		{
-			to.getWriteID().setCSN( CSN - truncateLimit );
+			to.getWriteID().setCSN( CSN - truncateLimit + 1 );
 			writeLog.headSet( to ).clear();
-			OSN = CSN - truncateLimit;
+			OSN = CSN - truncateLimit + 1;
 		}
 	}
 	
