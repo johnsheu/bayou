@@ -150,8 +150,7 @@ public class BayouServer<K, V>
 							{
 								BayouAERequest msg = (BayouAERequest)message;
 								BayouAEResponse<K, V> reply = database.getUpdates( msg );
-								if ( msg.isCreate() && ( state == ServerState.CREATED ||
-									state == ServerState.CREATING ) )
+								if ( msg.isCreate() && state == ServerState.CREATING )
 									reply.addServerID( new ServerID( serverID,
 										database.getAcceptStamp() + 1 ) );
 								reply.setAddress( msg.getAddress() );
@@ -259,6 +258,16 @@ public class BayouServer<K, V>
 		database = new BayouDB<K, V>();
 		communicator = new Communicator( port );
 		addresses = new ArrayList<InetSocketAddress>();
+	}
+
+	public BayouServer( int port, boolean isprimary )
+	{
+		this( port );
+		if ( isprimary )
+		{
+			database.setPrimary( true );
+			serverID = new ServerID( null, 0L );
+		}
 	}
 
 	public void start()
