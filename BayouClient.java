@@ -111,6 +111,7 @@ public class BayouClient{
 
 	protected void listSongs() {
     	final String SEPARATOR = "\n---------------";
+    	System.out.println(SEPARATOR);
     	for(Map.Entry<String, String> ent : getPlaylist().entrySet())
     		System.out.println("Title: " + ent.getKey() + "\nURL:" + ent.getValue() + SEPARATOR);
     	}
