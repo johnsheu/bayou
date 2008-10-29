@@ -165,7 +165,7 @@ public class ManagerMessage extends Message implements Serializable
 	public String toString()
 	{
 		if ( messageDatabase != null )
-			return super.toString() + messageType + ": " + '\n' + messageDatabase.dump();
+			return super.toString() + messageType + ": " + messageDatabase.dump();
 		else if ( messageBoolean != null )
 			return super.toString() + messageType + ": " + messageBoolean;
 		else if ( messageLong != null )

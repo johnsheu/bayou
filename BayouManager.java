@@ -117,9 +117,10 @@ public class BayouManager
 		{
 			if ( args.length != 2 )
 			{
-				System.out.print( "retire <host:port>\n" );
+				System.out.print( "retire <host:port>|<alias>\n" );
 				return;
 			}
+
 			InetSocketAddress address = getAddress( args[1] );
 			if ( address == null )
 				return;
@@ -432,6 +433,26 @@ public class BayouManager
 			communicator.sendMessage( message );
 			return;
 		}
+		else if ( args[0].equalsIgnoreCase( "get_database" ) )
+		{
+			if ( args.length != 2 )
+			{
+				System.out.print( "get_addresses <host:port>|<alias>\n" );
+				return;
+			}
+
+			InetSocketAddress address = getAddress( args[1] );
+			if ( address == null )
+				return;
+
+			ManagerMessage message = new ManagerMessage();
+			message.setAddress( address );
+			message.makeMessage( ManagerMessage.Type.GET_DB,
+				null, null, null, null );
+			Message reply = getMessageReply( message );
+			System.out.print( reply.toString() + '\n' );
+			return;
+		}
 		else if ( args[0].equalsIgnoreCase( "quit" ) ||
 			args[0].equalsIgnoreCase( "exit" ) )
 		{
@@ -445,6 +466,7 @@ public class BayouManager
 			System.out.print( " exit\n" );
 			System.out.print( " get_addresses\n" );
 			System.out.print( " get_caching\n" );
+			System.out.print( " get_database\n" );
 			System.out.print( " get_primary\n" );
 			System.out.print( " get_sleeptime\n" );
 			System.out.print( " get_talking\n" );
