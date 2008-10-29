@@ -18,7 +18,7 @@ public class BayouClient{
     	
     	int port = -1;
     	
-    	if(args[0]==null)
+    	if(args.length < 1)
     	{
     		System.out.print("Enter port number: ");
     		port = -1;

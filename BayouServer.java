@@ -142,6 +142,14 @@ public class BayouServer<K, V>
 							}
 						}
 					}
+					else if ( message instanceof ErrorMessage )
+					{
+						ErrorMessage msg = (ErrorMessage)message;
+						synchronized ( addresses )
+						{
+							addresses.remove( msg.getAddress() );
+						}
+					}
 					else if ( state != ServerState.RETIRED )
 					{
 						synchronized( database )
