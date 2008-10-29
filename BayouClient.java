@@ -15,6 +15,7 @@ public class BayouClient{
     public static void main(String[] args){
     	printWelcomeMessage();
     	Scanner m_scanner = new Scanner(System.in);
+    	boolean primary = false;
     	
     	int port = -1;
     	
@@ -43,9 +44,13 @@ public class BayouClient{
     		System.exit(1);
     	}
     	
-    	boolean primary = false;
-    	System.out.println("Are you the first (primary) node in the system? (y/n)");
-    	primary = m_scanner.nextLine().contains("y");
+    	if(args.length < 2)
+    	{
+	    	System.out.println("Are you the first (primary) node in the system? (y/n)");
+	    	primary = m_scanner.nextLine().contains("y");
+    	}
+    	else
+    		primary = Boolean.parseBoolean(args[1]);
     	
 		BayouClient client = new BayouClient(port, m_scanner, primary);
 		client.startUI();
