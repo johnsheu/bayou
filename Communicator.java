@@ -221,7 +221,7 @@ public class Communicator
 	 */
 	public Message readMessageBlocking() throws InterruptedException
 	{
-		return receiverQueue.poll();
+		return receiverQueue.take();
 	}
 
 	/**

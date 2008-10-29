@@ -81,9 +81,9 @@ public class BayouDB<K, V> implements Serializable
 
 		WriteID wid;
 
-		long writeAcceptStamp;
-		long sendAcceptStamp;
-		long recvAcceptStamp;
+		Long writeAcceptStamp;
+		Long sendAcceptStamp;
+		Long recvAcceptStamp;
 
 		boolean outOfRange;
 
@@ -118,7 +118,7 @@ public class BayouDB<K, V> implements Serializable
 					writeAcceptStamp = wid.getAcceptStamp();
 					recvAcceptStamp = recvVersionVector.get( wid.getServerID() );
 
-					if ( recvAcceptStamp >= writeAcceptStamp )
+					if ( recvAcceptStamp != null && recvAcceptStamp.compareTo( writeAcceptStamp ) >= 0 )
 						response.addCommitNotification( wid );		
 					else
 						response.addWrite( write );
@@ -148,7 +148,7 @@ public class BayouDB<K, V> implements Serializable
 					sendAcceptStamp  = versionVector.get( server );
 					recvAcceptStamp  = recvVersionVector.get( server );
 			
-					if ( writeAcceptStamp > recvAcceptStamp )
+					if ( writeAcceptStamp.compareTo(recvAcceptStamp) > 0 )
 					{
 						writeServer = write.getWriteID().getServerID();
 						if ( server.equals( writeServer ))
