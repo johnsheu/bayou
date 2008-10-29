@@ -41,23 +41,6 @@ public class TestBayou
 	result = sid3.compareTo( sid2 );
 	if( result != 0 )
 	    System.out.println( "Exception ServerID 5.  Result is: " + result );
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 	result = sid3.compareTo( sid4 );
 	if( result != -1 )
 	    System.out.println( "Exception ServerID 6.  Result is: " + result );
@@ -224,10 +207,10 @@ public class TestBayou
 
 		HashMap<ServerID, Long> versionVector = new HashMap<ServerID, Long>();
 		
-		versionVector.put( sid1, 0L );
-		versionVector.put( sid2, 0L );
-		versionVector.put( sid3, 0L );
-		versionVector.put( sid4, 0L );
+		versionVector.put( sid1, -1L );
+		versionVector.put( sid2, -1L );
+		versionVector.put( sid3, -1L );
+		versionVector.put( sid4, -1L );
 		
 		BayouAERequest request = new BayouAERequest( -1L, -1L, versionVector );
 
