@@ -212,15 +212,20 @@ public class BayouDB<K, V> implements Serializable
 				while ( witer.hasNext() )
 				{
 					BayouWrite<K, V> write = witer.next();
-					writeLog.add( write );
 					if ( write.getWriteID().isCommitted() )
 						CSN = Math.max( CSN, write.getWriteID().getCSN() );
 					WriteID wid = write.getWriteID();
-					if ( write.getType() == BayouWrite.Type.DELETE )
+					if ( write.getType() == BayouWrite.Type.RETIRE )
+					{
 						versionVector.remove( wid.getServerID() );
-					Long as = versionVector.get( wid.getServerID() );
-					if ( as == null || as.compareTo( wid.getAcceptStamp() ) < 0 )
-						versionVector.put( wid.getServerID(), wid.getAcceptStamp() );
+					}
+					else
+					{
+						Long as = versionVector.get( wid.getServerID() );
+						if ( as == null || as.compareTo( wid.getAcceptStamp() ) < 0 )
+							versionVector.put( wid.getServerID(), wid.getAcceptStamp() );
+					}
+					writeLog.add( write );
 
 					acceptStamp = Math.max( acceptStamp, wid.getAcceptStamp() + 1L );
 				}
@@ -232,11 +237,16 @@ public class BayouDB<K, V> implements Serializable
 					BayouWrite<K, V> write = witer.next();
 					write.getWriteID().setCSN( ++CSN );
 					WriteID wid = write.getWriteID();
-					if ( write.getType() == BayouWrite.Type.DELETE )
+					if ( write.getType() == BayouWrite.Type.RETIRE )
+					{
 						versionVector.remove( wid.getServerID() );
-					Long as = versionVector.get( wid.getServerID() );
-					if ( as == null || as.compareTo( wid.getAcceptStamp() ) < 0 )
-						versionVector.put( wid.getServerID(), wid.getAcceptStamp() );
+					}
+					else
+					{
+						Long as = versionVector.get( wid.getServerID() );
+						if ( as == null || as.compareTo( wid.getAcceptStamp() ) < 0 )
+							versionVector.put( wid.getServerID(), wid.getAcceptStamp() );
+					}
 					writeLog.add( write );
 
 					acceptStamp = Math.max( acceptStamp, wid.getAcceptStamp() + 1L );
@@ -253,7 +263,7 @@ public class BayouDB<K, V> implements Serializable
 		for ( BayouWrite<K,V> write : subset )
 		{
 			applyWrite( write, writeData );
-			if ( write.getType() == BayouWrite.Type.DELETE )
+			if ( write.getType() == BayouWrite.Type.RETIRE )
 				omittedVector.remove( write.getWriteID().getServerID() );
 		}
 		
