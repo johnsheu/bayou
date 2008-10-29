@@ -173,13 +173,16 @@ public class BayouDB<K, V> implements Serializable
 			writeData = db;
 			omittedVector = updates.getOmittedVector();
 			OSN = updates.getOSN();
+			Long omittedAcceptStamp;
 
 			Iterator<BayouWrite<K, V>> iter = writeLog.iterator();
 			while ( iter.hasNext() )
 			{
 				BayouWrite<K, V> write = iter.next();
 				WriteID id = write.getWriteID();
-				if ( id.getAcceptStamp() <= omittedVector.get( id.getServerID() ) )
+				
+				omittedAcceptStamp = omittedVector.get( id.getServerID() );
+				if ( omittedAcceptStamp != null && id.getAcceptStamp() <= omittedAcceptStamp )
 					iter.remove();
 			}
 		}
