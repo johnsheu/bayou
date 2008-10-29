@@ -27,22 +27,13 @@ public class BayouDB<K, V> implements Serializable
 	private boolean caching;
 	private boolean modified;
 	private HashMap<K, V> renderedData;
-    
+	
 	public BayouDB()
 	{
-		writeData = new HashMap<K, V>();
-		writeLog = new TreeSet<BayouWrite<K, V>>();
-		undoLog = new LinkedList<BayouWrite<K, V>>();
-		versionVector = new HashMap<ServerID, Long>();
-		omittedVector = new HashMap<ServerID, Long>();
-		acceptStamp = 0L;
-		CSN = -1L;
-		OSN = -1L;
+		clear();
 		primary = false;
 		truncateLimit = 16L;
 		caching = false;
-		modified = true;
-		renderedData = null;
 	}
 	
 	public BayouDB( boolean useCaching )
@@ -55,6 +46,20 @@ public class BayouDB<K, V> implements Serializable
 	{
 		this( useCaching );
 		truncateLimit = truncate;
+	}
+
+	public void clear()
+	{
+		writeData = new HashMap<K, V>();
+		writeLog = new TreeSet<BayouWrite<K, V>>();
+		undoLog = new LinkedList<BayouWrite<K, V>>();
+		versionVector = new HashMap<ServerID, Long>();
+		omittedVector = new HashMap<ServerID, Long>();
+		acceptStamp = 0L;
+		CSN = -1L;
+		OSN = -1L;
+		modified = true;
+		renderedData = null;
 	}
 
 	public BayouAEResponse<K, V> getUpdates( BayouAERequest request )
@@ -82,16 +87,15 @@ public class BayouDB<K, V> implements Serializable
 
 		boolean outOfRange;
 
-		if( OSN > recvCSN )
+		if ( OSN > recvCSN )
 		{
-		    //KAREN - rollback
-
-		    response.addDatabase( writeData );
-		    response.addOSN( OSN );
-		    response.addOmittedVector( omittedVector );
+			//  KAREN - rollback
+			response.addDatabase( writeData );
+			response.addOSN( OSN );
+			response.addOmittedVector( omittedVector );
 		}
 
-	        if( CSN > recvCSN )
+		if ( CSN > recvCSN )
 		{
 			outOfRange = false;
 
@@ -99,7 +103,7 @@ public class BayouDB<K, V> implements Serializable
 
 			long writeCSN;
 
-			while( writes.hasNext() && !outOfRange )
+			while ( writes.hasNext() && !outOfRange )
 			{
 				write = writes.next();
 
@@ -107,55 +111,56 @@ public class BayouDB<K, V> implements Serializable
 
 				writeCSN = wid.getCSN();
 
-				if( writeCSN == CSN )
-				    outOfRange = true;
+				if ( writeCSN == CSN )
+					outOfRange = true;
 
-				if( writeCSN > recvCSN )
+				if ( writeCSN > recvCSN )
 				{
 					writeAcceptStamp = wid.getAcceptStamp();
 					recvAcceptStamp = recvVersionVector.get( wid.getServerID() );
 
-					if( recvAcceptStamp >= writeAcceptStamp )
+					if ( recvAcceptStamp >= writeAcceptStamp )
 						response.addCommitNotification( wid );		
 					else
 						response.addWrite( write );
-				
 				}
 			}
 		}
 
+		Iterator<ServerID> servers = versionVector.keySet().iterator();
 
-	        Iterator<ServerID> servers = versionVector.keySet().iterator();
-
-	        while( servers.hasNext() )
+		while ( servers.hasNext() )
 		{
 			server = servers.next();
 
 			outOfRange = false;
 			writes = writeLog.descendingIterator();
-			while( writes.hasNext() && !outOfRange )
+			while ( writes.hasNext() && !outOfRange )
 			{
 				write = writes.next();
 
-				if( write.getWriteID().isCommitted() )
+				if ( write.getWriteID().isCommitted() )
+				{
 					outOfRange = true;
-
+				}
 				else
 				{
 					writeAcceptStamp = write.getWriteID().getAcceptStamp();
 					sendAcceptStamp  = versionVector.get( server );
 					recvAcceptStamp  = recvVersionVector.get( server );
-		    
-					if( writeAcceptStamp > recvAcceptStamp )
+			
+					if ( writeAcceptStamp > recvAcceptStamp )
 					{
-						writeServer = write.getWriteID().getServerID() ;
-						if( server.equals( writeServer ))
+						writeServer = write.getWriteID().getServerID();
+						if ( server.equals( writeServer ))
 						{
 							response.addWrite( write );
 						}
 					}
 					else
+					{
 						outOfRange = true;
+					}
 				}
 			}
 
@@ -182,8 +187,11 @@ public class BayouDB<K, V> implements Serializable
 				WriteID id = write.getWriteID();
 				
 				omittedAcceptStamp = omittedVector.get( id.getServerID() );
-				if ( omittedAcceptStamp != null && id.getAcceptStamp() <= omittedAcceptStamp )
+				if ( omittedAcceptStamp != null
+					&& id.getAcceptStamp() <= omittedAcceptStamp )
 					iter.remove();
+
+				acceptStamp = Math.max( acceptStamp, id.getAcceptStamp() + 1L );
 			}
 		}
 		
@@ -193,7 +201,6 @@ public class BayouDB<K, V> implements Serializable
 		LinkedList<WriteID> cn = updates.getCommitNotifications();
 		if ( cn != null )
 		{
-			//  Remove the writes to make committed from the write log
 			Collections.sort( cn );
 			Iterator<WriteID> citer = cn.iterator();
 			while ( citer.hasNext() )
@@ -206,6 +213,8 @@ public class BayouDB<K, V> implements Serializable
 				CSN = Math.max( CSN, cid.getCSN() );
 				item.getWriteID().setCSN( CSN );
 				writeLog.add( item );
+
+				acceptStamp = Math.max( acceptStamp, cid.getAcceptStamp() + 1L );
 			}
 		}
 
@@ -224,9 +233,13 @@ public class BayouDB<K, V> implements Serializable
 					if ( write.getWriteID().isCommitted() )
 						CSN = Math.max( CSN, write.getWriteID().getCSN() );
 					WriteID wid = write.getWriteID();
+					if ( write.getType() == BayouWrite.Type.DELETE )
+						versionVector.remove( wid.getServerID() );
 					Long as = versionVector.get( wid.getServerID() );
 					if ( as == null || as.compareTo( wid.getAcceptStamp() ) < 0 )
 						versionVector.put( wid.getServerID(), wid.getAcceptStamp() );
+
+					acceptStamp = Math.max( acceptStamp, wid.getAcceptStamp() + 1L );
 				}
 			}
 			else  //  Primary replica
@@ -236,10 +249,14 @@ public class BayouDB<K, V> implements Serializable
 					BayouWrite<K, V> write = witer.next();
 					write.getWriteID().setCSN( CSN++ );
 					WriteID wid = write.getWriteID();
+					if ( write.getType() == BayouWrite.Type.DELETE )
+						versionVector.remove( wid.getServerID() );
 					Long as = versionVector.get( wid.getServerID() );
 					if ( as == null || as.compareTo( wid.getAcceptStamp() ) < 0 )
 						versionVector.put( wid.getServerID(), wid.getAcceptStamp() );
 					writeLog.add( write );
+
+					acceptStamp = Math.max( acceptStamp, wid.getAcceptStamp() + 1L );
 				}
 			}
 		}
@@ -251,7 +268,11 @@ public class BayouDB<K, V> implements Serializable
 			new WriteID( CSN + 1L, -1L, null ) );
 		SortedSet<BayouWrite<K, V>> subset = writeLog.subSet( from, to );
 		for ( BayouWrite<K,V> write : subset )
+		{
 			applyWrite( write, writeData );
+			if ( write.getType() == BayouWrite.Type.DELETE )
+				omittedVector.remove( write.getWriteID().getServerID() );
+		}
 		
 		if ( OSN <= CSN - truncateLimit )
 		{
@@ -284,9 +305,14 @@ public class BayouDB<K, V> implements Serializable
 		versionVector.put( id.getServerID(), id.getAcceptStamp() );
 	}
 
-	public long getAcceptStamp()
+	public synchronized long getAcceptStamp()
 	{
 		return acceptStamp;
+	}
+
+	public synchronized void setAcceptStamp( long acceptStamp )
+	{
+		this.acceptStamp = acceptStamp;
 	}
 
 	public synchronized HashMap<K, V> getMap()
@@ -389,18 +415,18 @@ public class BayouDB<K, V> implements Serializable
 		else
 			truncateLimit = truncate;
 	}
-    
-    public String dump()
-    {
-    	StringBuffer buffer = new StringBuffer();
-    	buffer.append( "DB : " + writeData.toString() + '\n' );
-    	buffer.append( "WL: " + writeLog.toString() + '\n' );
-    	buffer.append( "UL: " + undoLog.toString() + '\n' );
-    	buffer.append( "VV: " + versionVector.toString() + '\n' );
-    	buffer.append( "OV: " + omittedVector.toString() + '\n' );
-    	buffer.append( "AS :" + acceptStamp + " CSN: " + CSN + " OSN: " + OSN + '\n' );
-    	return buffer.toString();
-    }
+	
+	public String dump()
+	{
+		StringBuffer buffer = new StringBuffer();
+		buffer.append( "DB : " + writeData.toString() + '\n' );
+		buffer.append( "WL: " + writeLog.toString() + '\n' );
+		buffer.append( "UL: " + undoLog.toString() + '\n' );
+		buffer.append( "VV: " + versionVector.toString() + '\n' );
+		buffer.append( "OV: " + omittedVector.toString() + '\n' );
+		buffer.append( "AS :" + acceptStamp + " CSN: " + CSN + " OSN: " + OSN + '\n' );
+		return buffer.toString();
+	}
 
 	public static void main( String[] args )
 	{

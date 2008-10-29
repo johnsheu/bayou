@@ -98,10 +98,12 @@ public class BayouServer<K, V>
 									ManagerMessage.Type.IS_SLEEPTIME, null,
 									null, sleepTime, null );
 								communicator.sendMessage( reply );
+								break;
 							}
 							case SET_SLEEPTIME:
 							{
 								sleepTime = msg.getLong();
+								break;
 							}
 							case GET_CACHING:
 							{
@@ -139,17 +141,47 @@ public class BayouServer<K, V>
 							}
 						}
 					}
-					else if ( message instanceof BayouAERequest )
+					else if ( state != ServerState.RETIRED )
 					{
-						BayouAERequest msg = (BayouAERequest)message;
-						BayouAEResponse<K, V> reply = database.getUpdates( msg );
-						reply.setAddress( msg.getAddress() );
-						communicator.sendMessage( reply );
-					}
-					else if ( message instanceof BayouAEResponse<?, ?> )
-					{
-						BayouAEResponse<K, V> msg = (BayouAEResponse<K, V>)message;
-						database.applyUpdates( msg );
+						synchronized( database )
+						{
+							if ( ( state == ServerState.RETIRING ||
+								state == ServerState.CREATED ) &&
+								message instanceof BayouAERequest )
+							{
+								BayouAERequest msg = (BayouAERequest)message;
+								BayouAEResponse<K, V> reply = database.getUpdates( msg );
+								if ( msg.isCreate() && state == ServerState.CREATED )
+									reply.addServerID( new ServerID( serverID,
+										database.getAcceptStamp() + 1 ) );
+								reply.setAddress( msg.getAddress() );
+								communicator.sendMessage( reply );
+								if ( state == ServerState.RETIRING )
+								{
+									state = ServerState.RETIRED;
+									database.notifyAll();
+								}
+							}
+							else if ( ( state == ServerState.CREATED ||
+								state == ServerState.CREATING ) &&
+								message instanceof BayouAEResponse<?, ?> )
+							{
+								BayouAEResponse<K, V> msg = (BayouAEResponse<K, V>)message;
+								if ( state == ServerState.CREATING &&
+									msg.getServerID() != null )
+								{
+									serverID = msg.getServerID();
+									database.setAcceptStamp(
+										msg.getServerID().getAcceptStamp() );
+									state = ServerState.CREATED;
+									database.notifyAll();
+								}
+								else if ( state == ServerState.CREATED )
+								{
+									database.applyUpdates( msg );
+								}
+							}
+						}
 					}
 				}
 				catch ( InterruptedException ex )
@@ -162,25 +194,21 @@ public class BayouServer<K, V>
 	
 	private class BayouServerActor extends Thread
 	{
-		Random random = null;
-		
 		public BayouServerActor()
 		{
-			random = new Random();
+
 		}
 		
 		public void run()
 		{
 			while ( !isInterrupted() )
 			{
-				synchronized( addresses )
+				InetSocketAddress address = getRandomAddress();
+				if ( address != null )
 				{
-					if( addresses.size() > 0 )
-					{
-						BayouAERequest message = database.makeRequest();
-						message.setAddress( addresses.get( random.nextInt( addresses.size() ) ) );
-						communicator.sendMessage( message );
-					}
+					BayouAERequest message = database.makeRequest();
+					message.setAddress( address );
+					communicator.sendMessage( message );
 				}
 				
 				try
@@ -193,6 +221,14 @@ public class BayouServer<K, V>
 				}
 			}
 		}
+	}
+
+	private enum ServerState
+	{
+		RETIRED,
+		CREATING,
+		CREATED,
+		RETIRING;
 	}
 
 	private Communicator communicator = null;
@@ -210,11 +246,16 @@ public class BayouServer<K, V>
 	private ArrayList<InetSocketAddress> addresses = null;
 
 	private ServerID serverID = null;
+
+	private ServerState state = ServerState.RETIRED;
 	
 	private long sleepTime = 100L;
 
+	Random random = null;
+
 	public BayouServer( int port )
 	{
+		random = new Random();
 		database = new BayouDB<K, V>();
 		communicator = new Communicator( port );
 		addresses = new ArrayList<InetSocketAddress>();
@@ -283,29 +324,83 @@ public class BayouServer<K, V>
 
 	public void create()
 	{
+		create( 0L );
+	}
+
+	public void create( long timeout )
+	{
 		synchronized ( database )
 		{
-			if ( serverID != null )
+			if ( state == ServerState.CREATED )
 				return;
-			
-			while(serverID == null)
+
+			if ( state == ServerState.RETIRING )
+				retire( timeout );
+
+			if ( state == ServerState.RETIRING )
+				return;
+
+			//  State now either RETIRED, or CREATING
+			if ( state == ServerState.RETIRED )
 			{
-				//block until we get a serverID
-				//TODO :: REMOVE THIS HACK
-				serverID = new ServerID(null, (long) 0);
+				InetSocketAddress address = getRandomAddress();
+				if ( address == null )
+					return;
+				state = ServerState.CREATING;
+				BayouAERequest request = new BayouAERequest();
+				request.setAddress( address );
+				communicator.sendMessage( request );
 			}
-			
-			//  Do stuff
+
+			try
+			{
+				while ( state != ServerState.CREATED )
+					database.wait( timeout );
+			}
+			catch ( InterruptedException ex )
+			{
+
+			}
 		}
 	}
 
 	public void retire()
 	{
+		retire( 0L );
+	}
+
+	public void retire( long timeout )
+	{
 		synchronized ( database )
 		{
-			if ( serverID == null )
+			if ( state == ServerState.RETIRED )
 				return;
-			//  Do stuff
+
+			if ( state == ServerState.CREATING )
+				create( timeout );
+
+			if ( state == ServerState.CREATING )
+				return;
+
+			//  State now either CREATED, or RETIRING
+			if ( state == ServerState.CREATED )
+			{
+				state = ServerState.RETIRING;
+				BayouWrite<K, V> write = new BayouWrite<K, V>(
+					null, null, BayouWrite.Type.DELETE,
+					new WriteID( database.getAcceptStamp(), serverID ) );
+				database.addWrite( write );
+			}
+
+			try
+			{
+				while ( state != ServerState.RETIRED )
+					database.wait( timeout );
+			}
+			catch ( InterruptedException ex )
+			{
+
+			}
 		}
 	}
 
@@ -313,7 +408,15 @@ public class BayouServer<K, V>
 	{
 		synchronized ( database )
 		{
-			return serverID != null;
+			return state == ServerState.CREATED;
+		}
+	}
+
+	public boolean isRetired()
+	{
+		synchronized ( database )
+		{
+			return state == ServerState.RETIRED;
 		}
 	}
 
@@ -321,7 +424,7 @@ public class BayouServer<K, V>
 	{
 		synchronized ( database )
 		{
-			if ( serverID == null )
+			if ( state != ServerState.CREATED )
 				return;
 			if ( !performUpdates )
 				return;
@@ -336,7 +439,7 @@ public class BayouServer<K, V>
 	{
 		synchronized ( database )
 		{
-			if ( serverID == null )
+			if ( state != ServerState.CREATED )
 				return;
 			if ( !performUpdates )
 				return;
@@ -351,7 +454,7 @@ public class BayouServer<K, V>
 	{
 		synchronized ( database )
 		{
-			if ( serverID == null )
+			if ( state != ServerState.CREATED )
 				return null;
 			return database.getMap().get( key );
 		}
@@ -361,7 +464,7 @@ public class BayouServer<K, V>
 	{
 		synchronized ( database )
 		{
-			if ( serverID == null )
+			if ( state != ServerState.CREATED )
 				return null;
 			return database.getMap();
 		}
@@ -371,7 +474,7 @@ public class BayouServer<K, V>
 	{
 		synchronized ( database )
 		{
-			if ( serverID == null )
+			if ( state != ServerState.CREATED )
 				return;
 			if ( !performUpdates )
 				return;
@@ -390,7 +493,7 @@ public class BayouServer<K, V>
 	{
 		synchronized ( database )
 		{
-			if ( serverID == null )
+			if ( state != ServerState.CREATED )
 				return 0;
 			return database.getMap().size();
 		}
@@ -412,6 +515,20 @@ public class BayouServer<K, V>
 		}
 	}
 
+	public InetSocketAddress getRandomAddress()
+	{
+		synchronized ( addresses )
+		{
+			if ( addresses.size() != 0 )
+				return addresses.get( random.nextInt( addresses.size() ) );
+		}
+		return null;
+	}
+
+	public String dump()
+	{
+		return database.dump();
+	}
 
 	public static void main( String[] args )
 	{
@@ -435,13 +552,6 @@ public class BayouServer<K, V>
 
 		BayouServer<String, String> server = new BayouServer<String, String>( port );
 		server.start();
-	}
-	
-	public String dump()
-	{
-		if ( database != null )
-			return database.dump();
-		return "";
 	}
 }
 

@@ -11,6 +11,13 @@ public class BayouAERequest extends Message implements Serializable
 
 	private HashMap<ServerID, Long> recvVV = null;
 
+	private boolean isCreate = false;
+
+	public BayouAERequest()
+	{
+		isCreate = true;
+	}
+
 	public BayouAERequest( long OSN, long CSN, HashMap<ServerID, Long> VV )
 	{
 		recvOSN = OSN;
@@ -31,6 +38,11 @@ public class BayouAERequest extends Message implements Serializable
 	public HashMap<ServerID, Long> getRecvVV()
 	{
 		return recvVV;
+	}
+
+	public boolean isCreate()
+	{
+		return isCreate;
 	}
 }
 
