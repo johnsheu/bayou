@@ -233,7 +233,7 @@ public class BayouDB<K, V> implements Serializable
 				while ( witer.hasNext() )
 				{
 					BayouWrite<K, V> write = witer.next();
-					write.getWriteID().setCSN( CSN++ );
+					write.getWriteID().setCSN( ++CSN );
 					WriteID wid = write.getWriteID();
 					if ( write.getType() == BayouWrite.Type.DELETE )
 						versionVector.remove( wid.getServerID() );
