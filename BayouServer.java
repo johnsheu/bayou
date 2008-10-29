@@ -47,6 +47,7 @@ public class BayouServer<K, V>
 							{
 								TextMessage reply = new TextMessage();
 								reply.setMessage(
+									"SERVERID:  " + serverID + '\n' +
 									"CREATED:   " + isCreated() + '\n' +
 									"RETIRED:   " + isRetired() + '\n' +
 									"TALKING:   " + performAntiEntropy + '\n' +
@@ -54,6 +55,7 @@ public class BayouServer<K, V>
 									"SLEEPTIME: " + sleepTime + '\n' +
 									"CACHING:   " + database.isCaching() + '\n' +
 									"PRIMARY    " + database.isPrimary() + '\n' );
+								reply.setAddress( msg.getAddress() );
 								communicator.sendMessage( reply );
 								break;
 							}
@@ -75,13 +77,13 @@ public class BayouServer<K, V>
 								reply.setAddress( msg.getAddress() );
 								reply.makeMessage(
 									ManagerMessage.Type.ADDRESSES_DUMP, null,
-									null, null, addresses );
+									null, null, getAddressList() );
 								communicator.sendMessage( reply );
 								break;
 							}
 							case SET_ADDRESSES:
 							{
-								addresses = msg.getAddresses();
+								setAddressList( msg.getAddresses() );
 								break;
 							}
 							case SET_SLEEPTIME:
@@ -129,9 +131,12 @@ public class BayouServer<K, V>
 							{
 								BayouAERequest msg = (BayouAERequest)message;
 								BayouAEResponse<K, V> reply = database.getUpdates( msg );
-								if ( msg.isCreate() && state == ServerState.CREATING )
+								if ( msg.isCreate() && state == ServerState.CREATED )
+								{
 									reply.addServerID( new ServerID( serverID,
-										database.getAcceptStamp() + 1 ) );
+										database.getAcceptStamp() ) );
+									database.setAcceptStamp( database.getAcceptStamp() + 1 );
+								}
 								reply.setAddress( msg.getAddress() );
 								communicator.sendMessage( reply );
 								if ( state == ServerState.RETIRING )

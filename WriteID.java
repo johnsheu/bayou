@@ -94,6 +94,9 @@ public class WriteID implements Comparable<WriteID>, Serializable
 				return 1;
 		}
 
+		if ( this.CSN != Long.MAX_VALUE )
+			return 0;
+
 		//  Both are uncommitted writes
 		if ( this.acceptStamp == other.acceptStamp )
 			return this.serverID.compareTo( other.serverID );

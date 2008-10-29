@@ -70,7 +70,6 @@ public class BayouDB<K, V> implements Serializable
 
 		Iterator<BayouWrite<K, V>> writes;
 		BayouWrite<K, V> write;
-		BayouWrite<K, V> tempWrite;
 
 		ServerID writeServer;
 		ServerID server;
@@ -78,7 +77,6 @@ public class BayouDB<K, V> implements Serializable
 		WriteID wid;
 
 		Long writeAcceptStamp;
-		Long sendAcceptStamp;
 		Long recvAcceptStamp;
 
 		if ( OSN > recvCSN )
@@ -133,10 +131,9 @@ public class BayouDB<K, V> implements Serializable
 				else
 				{
 					writeAcceptStamp = write.getWriteID().getAcceptStamp();
-					sendAcceptStamp  = versionVector.get( server );
 					recvAcceptStamp  = recvVersionVector.get( server );
 			
-					if ( writeAcceptStamp.compareTo(recvAcceptStamp) > 0 )
+					if ( recvAcceptStamp == null || writeAcceptStamp.compareTo(recvAcceptStamp) > 0 )
 					{
 						writeServer = write.getWriteID().getServerID();
 						if ( server.equals( writeServer ))
@@ -284,7 +281,7 @@ public class BayouDB<K, V> implements Serializable
 	{
 		modified = true;
 		if ( primary )
-			write.getWriteID().setCSN( CSN++ );
+			write.getWriteID().setCSN( ++CSN );
 		writeLog.add( write );
 		applyWrite( write, writeData );
 		acceptStamp += 1L;
