@@ -29,8 +29,6 @@ public class BayouClient{
     	else
     		port = Integer.parseInt(args[0]);
     	
-    	
-    	
     	try
     	{
     		ServerSocket s = ServerSocketChannel.open().socket();
@@ -56,12 +54,14 @@ public class BayouClient{
 	protected void startUI() {
     	while(true){
 	    	System.out.print(
-	    			"0 - Connect to a Network Manually \n" +
+	    			//"0 - Connect to a Network Manually \n" +
 	    			"1 - Add Song \n" +
 	    			"2 - Modify Song \n" +
 	    			"3 - Remove Song By Name \n" +
 	    			"4 - List Songs \n" +
-	    			"5 - Exit \n" +
+	    			"5 - Go Online \n" +
+	    			"6 - Go Offline \n" +
+	    			"7 - Exit \n" +
 	    			"Enter number: ");
 	    	
 	    	int switch_val = -1;
@@ -74,11 +74,23 @@ public class BayouClient{
 	    	case 2: modifySong(new Song(prompt(m_scanner, "title"), prompt(m_scanner, "URL"))); break;
 	    	case 3: removeSong(prompt(m_scanner, "title")); break;
 	    	case 4: listSongs(); break;
-	    	case 5: exit(); break;
-	    	case 0: System.out.println("You can't do this yet.  Sorry!"); break;
+	    	case 5: goOnline(); break;
+	    	case 6: goOffline(); break;
+	    	case 7: exit(); break;
+	    	//case 0: System.out.println("You can't do this yet.  Sorry!"); break;
 	    	default: System.out.println("Invalid option."); break;}}}
     
-    protected void exit() {
+    protected void goOffline() {
+		m_server.stop();
+		System.out.println("You're in offline mode.");
+	}
+
+	protected void goOnline() {
+		m_server.start();
+		System.out.println("You're in online mode.");
+	}
+
+	protected void exit() {
     	System.out.println("Attempting to retire from the system.");
     	m_server.retire();
     	m_scanner.close();
@@ -88,6 +100,9 @@ public class BayouClient{
 
 	protected void listSongs() {
     	final String SEPARATOR = "\n---------------";
+    	//HACK
+    	System.out.println(m_server.dump());
+    	//END HACK
     	for(Map.Entry<String, String> ent : getPlaylist().entrySet())
     		System.out.println("Title: " + ent.getKey() + "\nURL:" + ent.getValue() + SEPARATOR);
     	}
@@ -112,13 +127,12 @@ public class BayouClient{
 
     public BayouClient(int port, Scanner inputReader){
     	m_server = new BayouServer<String, String>(port);
-    	m_server.start();
+    	goOnline();
     	m_server.create();
     	m_scanner = inputReader;}
     
     public BayouClient(BayouServer<String, String> server){
     	m_server = server;
-    	if(!m_server.isStarted())
-    		m_server.start();
+    	goOnline();
     	if(!m_server.isCreated())
     		m_server.create();}}
