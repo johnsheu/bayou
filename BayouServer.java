@@ -55,6 +55,7 @@ public class BayouServer<K, V>
 									"CACHING:   " + database.isCaching() + '\n' +
 									"PRIMARY    " + database.isPrimary() + '\n' );
 								communicator.sendMessage( reply );
+								break;
 							}
 							case SET_TALKING:
 							{
@@ -100,12 +101,12 @@ public class BayouServer<K, V>
 							}
 							case CREATE:
 							{
-								create();
+								create( -1L );
 								break;
 							}
 							case RETIRE:
 							{
-								retire();
+								retire( -1L );
 								BayouServer.this.stop();
 								break;
 							}
@@ -113,7 +114,7 @@ public class BayouServer<K, V>
 					}
 					else if ( message instanceof ErrorMessage )
 					{
-ErrorMessage msg = (ErrorMessage)message;
+						ErrorMessage msg = (ErrorMessage)message;
 						synchronized ( addresses )
 						{
 							addresses.remove( msg.getAddress() );
@@ -177,16 +178,23 @@ ErrorMessage msg = (ErrorMessage)message;
 		{
 			while ( !isInterrupted() )
 			{
-				InetSocketAddress address = getRandomAddress();
-				if ( address != null )
-				{
-					BayouAERequest message = database.makeRequest();
-					message.setAddress( address );
-					communicator.sendMessage( message );
-				}
-				
 				try
 				{
+					synchronized ( database )
+					{
+						while ( state == ServerState.RETIRED ||
+							state == ServerState.CREATING )
+							database.wait();
+					}
+
+					InetSocketAddress address = getRandomAddress();
+					if ( address != null )
+					{
+						BayouAERequest message = database.makeRequest();
+						message.setAddress( address );
+						communicator.sendMessage( message );
+					}
+				
 					sleep( sleepTime );
 				}
 				catch ( InterruptedException ex )
@@ -338,6 +346,9 @@ ErrorMessage msg = (ErrorMessage)message;
 				communicator.sendMessage( request );
 			}
 
+			if ( timeout < 0 )
+				return;
+
 			try
 			{
 				while ( state != ServerState.CREATED )
@@ -377,6 +388,9 @@ ErrorMessage msg = (ErrorMessage)message;
 					new WriteID( database.getAcceptStamp(), serverID ) );
 				database.addWrite( write );
 			}
+
+			if ( timeout < 0 )
+				return;
 
 			try
 			{

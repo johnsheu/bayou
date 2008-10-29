@@ -65,14 +65,10 @@ public class BayouDB<K, V> implements Serializable
 	public BayouAEResponse<K, V> getUpdates( BayouAERequest request )
 	{
 		BayouAEResponse<K, V> response = new BayouAEResponse<K, V>();
-
 		HashMap<ServerID, Long> recvVersionVector = request.getRecvVV();
-
 		long recvCSN = request.getRecvCSN();
 
-
 		Iterator<BayouWrite<K, V>> writes;
-
 		BayouWrite<K, V> write;
 		BayouWrite<K, V> tempWrite;
 
@@ -85,8 +81,6 @@ public class BayouDB<K, V> implements Serializable
 		Long sendAcceptStamp;
 		Long recvAcceptStamp;
 
-		boolean outOfRange;
-
 		if ( OSN > recvCSN )
 		{
 			response.addDatabase( writeData );
@@ -96,22 +90,14 @@ public class BayouDB<K, V> implements Serializable
 
 		if ( CSN > recvCSN )
 		{
-			outOfRange = false;
-
 			writes = writeLog.iterator();
-
 			long writeCSN;
 
-			while ( writes.hasNext() && !outOfRange )
+			while ( writes.hasNext() )
 			{
 				write = writes.next();
-
 				wid = write.getWriteID();
-
 				writeCSN = wid.getCSN();
-
-				if ( writeCSN == CSN )
-					outOfRange = true;
 
 				if ( writeCSN > recvCSN )
 				{
@@ -123,6 +109,9 @@ public class BayouDB<K, V> implements Serializable
 					else
 						response.addWrite( write );
 				}
+
+				if ( writeCSN == CSN )
+					break;
 			}
 		}
 
@@ -132,15 +121,14 @@ public class BayouDB<K, V> implements Serializable
 		{
 			server = servers.next();
 
-			outOfRange = false;
 			writes = writeLog.descendingIterator();
-			while ( writes.hasNext() && !outOfRange )
+			while ( writes.hasNext() )
 			{
 				write = writes.next();
 
 				if ( write.getWriteID().isCommitted() )
 				{
-					outOfRange = true;
+					break;
 				}
 				else
 				{
@@ -158,11 +146,10 @@ public class BayouDB<K, V> implements Serializable
 					}
 					else
 					{
-						outOfRange = true;
+						break;
 					}
 				}
 			}
-
 		}
 		return response;
 	}

@@ -396,7 +396,7 @@ public class BayouManager
 		{
 			if ( args.length != 2 )
 			{
-				System.out.print( "get_addresses <host:port>|<alias>\n" );
+				System.out.print( "get_database <host:port>|<alias>\n" );
 				return;
 			}
 
