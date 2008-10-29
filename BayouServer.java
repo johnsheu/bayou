@@ -357,7 +357,8 @@ public class BayouServer<K, V>
 				if ( address == null )
 					return;
 				state = ServerState.CREATING;
-				BayouAERequest request = new BayouAERequest();
+				BayouAERequest request = database.makeRequest();
+				request.setCreate( true );
 				request.setAddress( address );
 				communicator.sendMessage( request );
 			}

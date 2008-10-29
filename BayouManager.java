@@ -111,6 +111,28 @@ public class BayouManager
 			}
 			BayouServer server = new BayouServer( port );
 			server.start();
+			server.create();
+			return;
+		}
+		if ( args[0].equalsIgnoreCase( "create_primary" ) )
+		{
+			if ( args.length != 2 )
+			{
+				System.out.print( "create_primary <port>\n" );
+				return;
+			}
+			int port = 0;
+			try
+			{
+				port = Integer.parseInt( args[1] );
+			}
+			catch ( NumberFormatException ex )
+			{
+				ex.printStackTrace();
+				return;
+			}
+			BayouServer server = new BayouServer( port, true );
+			server.start();
 			return;
 		}
 		else if ( args[0].equalsIgnoreCase( "retire" ) )
@@ -463,6 +485,7 @@ public class BayouManager
 			System.out.print( "Commands:\n" );
 			System.out.print( " alias\n" );
 			System.out.print( " create\n" );
+			System.out.print( " create_primary\n" );
 			System.out.print( " exit\n" );
 			System.out.print( " get_addresses\n" );
 			System.out.print( " get_caching\n" );
