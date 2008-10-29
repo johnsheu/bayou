@@ -124,6 +124,11 @@ public class BayouServer<K, V>
 					}
 					else if ( state != ServerState.RETIRED )
 					{
+						synchronized ( addresses )
+						{
+							if ( !addresses.contains( message.getAddress() ) )
+								addresses.add( message.getAddress() );
+						}
 						synchronized ( database )
 						{
 							if ( state != ServerState.CREATING &&
@@ -389,7 +394,7 @@ public class BayouServer<K, V>
 			{
 				state = ServerState.RETIRING;
 				BayouWrite<K, V> write = new BayouWrite<K, V>(
-					null, null, BayouWrite.Type.DELETE,
+					null, null, BayouWrite.Type.RETIRE,
 					new WriteID( database.getAcceptStamp(), serverID ) );
 				database.addWrite( write );
 			}

@@ -194,6 +194,16 @@ public class BayouManager
 			aliases.remove( args[1] );
 			return;
 		}
+		else if ( args[0].equalsIgnoreCase( "source" ) )
+		{
+			if ( args.length != 2 )
+			{
+				System.out.print( "source <file>\n" );
+				return;
+			}
+			readFile( args[1] );
+			return;
+		}
 		else if ( args[0].equalsIgnoreCase( "sleep" ) )
 		{
 			if ( args.length != 2 )
@@ -442,6 +452,28 @@ public class BayouManager
 		}
 	}
 
+	private void readFile( String name )
+	{
+		try
+		{
+			BufferedReader reader = new BufferedReader( new FileReader( name ) );
+			String line;
+			while ( ( line = reader.readLine() ) != null )
+			{
+				System.out.print( "> " + line + '\n' );
+				commandLine( line );
+			}
+		}
+		catch ( FileNotFoundException ex )
+		{
+			ex.printStackTrace();
+		}
+		catch ( IOException ex )
+		{
+			ex.printStackTrace();
+		}
+	}
+
 	public static void main( String[] args )
 	{
 		if ( args.length < 1 || args.length > 2 )
@@ -466,27 +498,7 @@ public class BayouManager
 		BayouManager manager = new BayouManager( port );
 
 		if ( args.length == 2 )
-		{
-			try
-			{
-				BufferedReader reader = new BufferedReader( 
-					new FileReader( args[1] ) );
-				String line;
-				while ( ( line = reader.readLine() ) != null )
-				{
-					System.out.print( "> " + line + '\n' );
-					manager.commandLine( line );
-				}
-			}
-			catch ( FileNotFoundException ex )
-			{
-				ex.printStackTrace();
-			}
-			catch ( IOException ex )
-			{
-				ex.printStackTrace();
-			}
-		}
+			manager.readFile( args[1] );
 
 		BufferedReader reader = new BufferedReader( 
 			new InputStreamReader( System.in ) );
