@@ -89,7 +89,6 @@ public class BayouDB<K, V> implements Serializable
 
 		if ( OSN > recvCSN )
 		{
-			//  KAREN - rollback
 			response.addDatabase( writeData );
 			response.addOSN( OSN );
 			response.addOmittedVector( omittedVector );
@@ -300,6 +299,7 @@ public class BayouDB<K, V> implements Serializable
 		if ( primary )
 			write.getWriteID().setCSN( CSN++ );
 		writeLog.add( write );
+		applyWrite( write, writeData );
 		acceptStamp += 1L;
 		WriteID id = write.getWriteID();
 		versionVector.put( id.getServerID(), id.getAcceptStamp() );

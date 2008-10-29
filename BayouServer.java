@@ -267,6 +267,7 @@ public class BayouServer<K, V>
 		{
 			database.setPrimary( true );
 			serverID = new ServerID( null, 0L );
+			state = ServerState.CREATED;
 		}
 	}
 
@@ -382,7 +383,7 @@ public class BayouServer<K, V>
 	{
 		synchronized ( database )
 		{
-			if ( state == ServerState.RETIRED )
+			if ( database.isPrimary() || state == ServerState.RETIRED )
 				return;
 
 			if ( state == ServerState.CREATING )

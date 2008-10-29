@@ -9,14 +9,15 @@ public class TestBayouClient extends BayouClient
 	public static void main(String[] args) 
 	{
 		Integer port = Integer.parseInt(args[0]);
-		TestBayouClient client = new TestBayouClient(port);
+		boolean primary = Boolean.parseBoolean(args[1]);
+		TestBayouClient client = new TestBayouClient(port, primary);
 		client.breakOurSystem();
 		System.exit(0);
 	}
 
-	public TestBayouClient(int port)
+	public TestBayouClient(int port, boolean primary)
 	{
-		super(port, new Scanner(System.in));
+		super(port, new Scanner(System.in), primary);
 	}
 
 	/**

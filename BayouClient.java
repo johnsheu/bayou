@@ -2,6 +2,8 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.nio.channels.ServerSocketChannel;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Scanner;
 
@@ -41,7 +43,11 @@ public class BayouClient{
     		System.exit(1);
     	}
     	
-		BayouClient client = new BayouClient(port, m_scanner);
+    	boolean primary = false;
+    	System.out.println("Are you the first (primary) node in the system? (y/n)");
+    	primary = m_scanner.nextLine().contains("y");
+    	
+		BayouClient client = new BayouClient(port, m_scanner, primary);
 		client.startUI();
     	}
 
@@ -100,9 +106,6 @@ public class BayouClient{
 
 	protected void listSongs() {
     	final String SEPARATOR = "\n---------------";
-    	//HACK
-    	System.out.println(m_server.dump());
-    	//END HACK
     	for(Map.Entry<String, String> ent : getPlaylist().entrySet())
     		System.out.println("Title: " + ent.getKey() + "\nURL:" + ent.getValue() + SEPARATOR);
     	}
@@ -125,9 +128,10 @@ public class BayouClient{
 			return new Playlist();
 	}
 
-    public BayouClient(int port, Scanner inputReader){
-    	m_server = new BayouServer<String, String>(port);
+    public BayouClient(int port, Scanner inputReader, boolean primary){
+    	m_server = new BayouServer<String, String>(port, primary);
     	goOnline();
+    	//m_server.setAddressList(new ArrayList<InetSocketAddress>(Arrays.asList(new InetSocketAddress[]{new InetSocketAddress("localhost", port)})));
     	m_server.create();
     	m_scanner = inputReader;}
     
