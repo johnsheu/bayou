@@ -223,11 +223,11 @@ public class BayouManager
 			}
 			return;
 		}
-		else if ( args[0].equalsIgnoreCase( "get_talking" ) )
+		else if ( args[0].equalsIgnoreCase( "status" ) )
 		{
 			if ( args.length != 2 )
 			{
-				System.out.print( "get_talking <host:port>|<alias>\n" );
+				System.out.print( "status <host:port>|<alias>\n" );
 				return;
 			}
 
@@ -237,7 +237,7 @@ public class BayouManager
 
 			ManagerMessage message = new ManagerMessage();
 			message.setAddress( address );
-			message.makeMessage( ManagerMessage.Type.GET_TALKING,
+			message.makeMessage( ManagerMessage.Type.GET_STATUS,
 				null, null, null, null );
 			Message reply = getMessageReply( message );
 			System.out.print( reply.toString() + '\n' );
@@ -263,26 +263,6 @@ public class BayouManager
 			communicator.sendMessage( message );
 			return;
 		}
-		else if ( args[0].equalsIgnoreCase( "get_updating" ) )
-		{
-			if ( args.length != 2 )
-			{
-				System.out.print( "get_updating <host:port>|<alias>\n" );
-				return;
-			}
-
-			InetSocketAddress address = getAddress( args[1] );
-			if ( address == null )
-				return;
-
-			ManagerMessage message = new ManagerMessage();
-			message.setAddress( address );
-			message.makeMessage( ManagerMessage.Type.GET_UPDATING,
-				null, null, null, null );
-			Message reply = getMessageReply( message );
-			System.out.print( reply.toString() + '\n' );
-			return;
-		}
 		else if ( args[0].equalsIgnoreCase( "set_updating" ) )
 		{
 			if ( args.length != 3 )
@@ -301,26 +281,6 @@ public class BayouManager
 			message.makeMessage( ManagerMessage.Type.SET_UPDATING,
 				null, value, null, null );
 			communicator.sendMessage( message );
-			return;
-		}
-		else if ( args[0].equalsIgnoreCase( "get_sleeptime" ) )
-		{
-			if ( args.length != 2 )
-			{
-				System.out.print( "get_sleeptime <host:port>|<alias>\n" );
-				return;
-			}
-
-			InetSocketAddress address = getAddress( args[1] );
-			if ( address == null )
-				return;
-
-			ManagerMessage message = new ManagerMessage();
-			message.setAddress( address );
-			message.makeMessage( ManagerMessage.Type.GET_SLEEPTIME,
-				null, null, null, null );
-			Message reply = getMessageReply( message );
-			System.out.print( reply.toString() + '\n' );
 			return;
 		}
 		else if ( args[0].equalsIgnoreCase( "set_sleeptime" ) )
@@ -343,26 +303,6 @@ public class BayouManager
 			communicator.sendMessage( message );
 			return;
 		}
-		else if ( args[0].equalsIgnoreCase( "get_caching" ) )
-		{
-			if ( args.length != 2 )
-			{
-				System.out.print( "get_caching <host:port>|<alias>\n" );
-				return;
-			}
-
-			InetSocketAddress address = getAddress( args[1] );
-			if ( address == null )
-				return;
-
-			ManagerMessage message = new ManagerMessage();
-			message.setAddress( address );
-			message.makeMessage( ManagerMessage.Type.GET_CACHING,
-				null, null, null, null );
-			Message reply = getMessageReply( message );
-			System.out.print( reply.toString() + '\n' );
-			return;
-		}
 		else if ( args[0].equalsIgnoreCase( "set_caching" ) )
 		{
 			if ( args.length != 3 )
@@ -381,26 +321,6 @@ public class BayouManager
 			message.makeMessage( ManagerMessage.Type.SET_CACHING,
 				null, value, null, null );
 			communicator.sendMessage( message );
-			return;
-		}
-		else if ( args[0].equalsIgnoreCase( "get_primary" ) )
-		{
-			if ( args.length != 2 )
-			{
-				System.out.print( "get_primary <host:port>|<alias>\n" );
-				return;
-			}
-
-			InetSocketAddress address = getAddress( args[1] );
-			if ( address == null )
-				return;
-
-			ManagerMessage message = new ManagerMessage();
-			message.setAddress( address );
-			message.makeMessage( ManagerMessage.Type.GET_PRIMARY,
-				null, null, null, null );
-			Message reply = getMessageReply( message );
-			System.out.print( reply.toString() + '\n' );
 			return;
 		}
 		else if ( args[0].equalsIgnoreCase( "set_primary" ) )
@@ -504,12 +424,7 @@ public class BayouManager
 			System.out.print( " create\n" );
 			System.out.print( " exit\n" );
 			System.out.print( " get_addresses\n" );
-			System.out.print( " get_caching\n" );
 			System.out.print( " get_database\n" );
-			System.out.print( " get_primary\n" );
-			System.out.print( " get_sleeptime\n" );
-			System.out.print( " get_talking\n" );
-			System.out.print( " get_updating\n" );
 			System.out.print( " quit\n" );
 			System.out.print( " retire\n" );
 			System.out.print( " set_addresses\n" );
@@ -520,6 +435,7 @@ public class BayouManager
 			System.out.print( " set_updating\n" );
 			System.out.print( " start\n" );
 			System.out.print( " start_primary\n" );
+			System.out.print( " status\n" );
 			System.out.print( " unalias\n" );
 			System.out.print( "Call a command with no arguments for usage info\n" );
 			return;

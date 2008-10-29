@@ -419,7 +419,7 @@ public class BayouDB<K, V> implements Serializable
 	public String dump()
 	{
 		StringBuffer buffer = new StringBuffer();
-		buffer.append( "DB : " + writeData.toString() + '\n' );
+		buffer.append( "WD : " + writeData.toString() + '\n' );
 		buffer.append( "WL: " + writeLog.toString() + '\n' );
 		buffer.append( "UL: " + undoLog.toString() + '\n' );
 		buffer.append( "VV: " + versionVector.toString() + '\n' );

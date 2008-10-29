@@ -43,30 +43,23 @@ public class BayouServer<K, V>
 								communicator.sendMessage( msg );
 								break;
 							}
-							case GET_TALKING:
+							case GET_STATUS:
 							{
-								ManagerMessage reply = new ManagerMessage();
-								reply.setAddress( msg.getAddress() );
-								msg.makeMessage(
-									ManagerMessage.Type.IS_TALKING, null,
-									performAntiEntropy, null, null );
-								communicator.sendMessage( msg );
-								break;
+								TextMessage reply = new TextMessage();
+								reply.setMessage(
+									"CREATED:   " + isCreated() + '\n' +
+									"RETIRED:   " + isRetired() + '\n' +
+									"TALKING:   " + performAntiEntropy + '\n' +
+									"UPDATING:  " + performUpdates + '\n' +
+									"SLEEPTIME: " + sleepTime + '\n' +
+									"CACHING:   " + database.isCaching() + '\n' +
+									"PRIMARY    " + database.isPrimary() + '\n' );
+								communicator.sendMessage( reply );
 							}
 							case SET_TALKING:
 							{
 								performAntiEntropy =
 									msg.getBoolean().booleanValue();
-								break;
-							}
-							case GET_UPDATING:
-							{
-								ManagerMessage reply = new ManagerMessage();
-								reply.setAddress( msg.getAddress() );
-								msg.makeMessage(
-									ManagerMessage.Type.IS_UPDATING, null,
-									performUpdates, null, null );
-								communicator.sendMessage( msg );
 								break;
 							}
 							case SET_UPDATING:
@@ -90,44 +83,14 @@ public class BayouServer<K, V>
 								addresses = msg.getAddresses();
 								break;
 							}
-							case GET_SLEEPTIME:
-							{
-								ManagerMessage reply = new ManagerMessage();
-								reply.setAddress( msg.getAddress() );
-								reply.makeMessage(
-									ManagerMessage.Type.IS_SLEEPTIME, null,
-									null, sleepTime, null );
-								communicator.sendMessage( reply );
-								break;
-							}
 							case SET_SLEEPTIME:
 							{
 								sleepTime = msg.getLong();
 								break;
 							}
-							case GET_CACHING:
-							{
-								ManagerMessage reply = new ManagerMessage();
-								reply.setAddress( msg.getAddress() );
-								msg.makeMessage(
-									ManagerMessage.Type.IS_CACHING, null,
-									database.isCaching(), null, null );
-								communicator.sendMessage( msg );
-								break;
-							}
 							case SET_CACHING:
 							{
 								database.setCaching( msg.getBoolean().booleanValue() );
-								break;
-							}
-							case GET_PRIMARY:
-							{
-								ManagerMessage reply = new ManagerMessage();
-								reply.setAddress( msg.getAddress() );
-								msg.makeMessage(
-									ManagerMessage.Type.IS_PRIMARY, null,
-									database.isPrimary(), null, null );
-								communicator.sendMessage( msg );
 								break;
 							}
 							case SET_PRIMARY:
@@ -150,7 +113,7 @@ public class BayouServer<K, V>
 					}
 					else if ( message instanceof ErrorMessage )
 					{
-						ErrorMessage msg = (ErrorMessage)message;
+ErrorMessage msg = (ErrorMessage)message;
 						synchronized ( addresses )
 						{
 							addresses.remove( msg.getAddress() );
@@ -158,9 +121,10 @@ public class BayouServer<K, V>
 					}
 					else if ( state != ServerState.RETIRED )
 					{
-						synchronized( database )
+						synchronized ( database )
 						{
-							if ( message instanceof BayouAERequest )
+							if ( state != ServerState.CREATING &&
+								message instanceof BayouAERequest )
 							{
 								BayouAERequest msg = (BayouAERequest)message;
 								BayouAEResponse<K, V> reply = database.getUpdates( msg );
@@ -175,8 +139,7 @@ public class BayouServer<K, V>
 									database.notifyAll();
 								}
 							}
-							else if ( ( state == ServerState.CREATED ||
-								state == ServerState.CREATING ) &&
+							else if ( state != ServerState.RETIRING &&
 								message instanceof BayouAEResponse<?, ?> )
 							{
 								BayouAEResponse<K, V> msg = (BayouAEResponse<K, V>)message;
@@ -189,10 +152,8 @@ public class BayouServer<K, V>
 									state = ServerState.CREATED;
 									database.notifyAll();
 								}
-								else if ( state == ServerState.CREATED )
-								{
-									database.applyUpdates( msg );
-								}
+								
+								database.applyUpdates( msg );
 							}
 						}
 					}

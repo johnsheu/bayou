@@ -33,15 +33,11 @@ public class ManagerMessage extends Message implements Serializable
 		NONE,
 		//  The manager sends these kinds of messages
 		GET_DB,
-		GET_TALKING,
+		GET_STATUS,
 		SET_TALKING,
-		GET_UPDATING,
 		SET_UPDATING,
-		GET_SLEEPTIME,
 		SET_SLEEPTIME,
-		GET_CACHING,
 		SET_CACHING,
-		GET_PRIMARY,
 		SET_PRIMARY,
 		GET_ADDRESSES,
 		SET_ADDRESSES,
@@ -49,11 +45,7 @@ public class ManagerMessage extends Message implements Serializable
 		RETIRE,
 		//  The client sends these kinds of messages in reply
 		DB_DUMP,
-		IS_TALKING,
-		IS_UPDATING,
-		IS_SLEEPTIME,
-		IS_CACHING,
-		IS_PRIMARY,
+		STATUS,
 		ADDRESSES_DUMP;
 	}
 
@@ -89,7 +81,9 @@ public class ManagerMessage extends Message implements Serializable
 	 *
 	 * @param type       the {@link Type} of this message
 	 * @param database   the {@link BayouDB} associated with this message
-	 * @param value      the <code>Boolean</code> value associated with
+	 * @param bvalue     the <code>Boolean</code> value associated with
+	 *                   this message
+	 * @param lvalue     the <code>Long</code> value associated with
 	 *                   this message
 	 * @param addresses  the {@link ArrayList} of
 	 *                   {@link InetSocketAddress} elements associated with
