@@ -45,6 +45,7 @@ public class ManagerMessage extends Message implements Serializable
 		SET_PRIMARY,
 		GET_ADDRESSES,
 		SET_ADDRESSES,
+		CREATE,
 		RETIRE,
 		//  The client sends these kinds of messages in reply
 		DB_DUMP,

@@ -135,10 +135,16 @@ public class BayouServer<K, V>
 								database.setPrimary( msg.getBoolean().booleanValue() );
 								break;
 							}
+							case CREATE:
+							{
+								create();
+								break;
+							}
 							case RETIRE:
 							{
 								retire();
 								BayouServer.this.stop();
+								break;
 							}
 						}
 					}

@@ -92,11 +92,11 @@ public class BayouManager
 			//  Comment
 			return;
 
-		if ( args[0].equalsIgnoreCase( "create" ) )
+		if ( args[0].equalsIgnoreCase( "start" ) )
 		{
 			if ( args.length != 2 )
 			{
-				System.out.print( "create <port>\n" );
+				System.out.print( "start <port>\n" );
 				return;
 			}
 			int port = 0;
@@ -111,14 +111,13 @@ public class BayouManager
 			}
 			BayouServer server = new BayouServer( port );
 			server.start();
-			server.create();
 			return;
 		}
-		if ( args[0].equalsIgnoreCase( "create_primary" ) )
+		if ( args[0].equalsIgnoreCase( "start_primary" ) )
 		{
 			if ( args.length != 2 )
 			{
-				System.out.print( "create_primary <port>\n" );
+				System.out.print( "start_primary <port>\n" );
 				return;
 			}
 			int port = 0;
@@ -134,6 +133,24 @@ public class BayouManager
 			BayouServer server = new BayouServer( port, true );
 			server.start();
 			return;
+		}
+		else if ( args[0].equalsIgnoreCase( "create" ) )
+		{
+			if ( args.length != 2 )
+			{
+				System.out.print( "create <host:port>|<alias>\n" );
+				return;
+			}
+
+			InetSocketAddress address = getAddress( args[1] );
+			if ( address == null )
+				return;
+
+			ManagerMessage message = new ManagerMessage();
+			message.setAddress( address );
+			message.makeMessage( ManagerMessage.Type.CREATE,
+				null, null, null, null );
+			communicator.sendMessage( message );
 		}
 		else if ( args[0].equalsIgnoreCase( "retire" ) )
 		{
@@ -485,7 +502,6 @@ public class BayouManager
 			System.out.print( "Commands:\n" );
 			System.out.print( " alias\n" );
 			System.out.print( " create\n" );
-			System.out.print( " create_primary\n" );
 			System.out.print( " exit\n" );
 			System.out.print( " get_addresses\n" );
 			System.out.print( " get_caching\n" );
@@ -502,6 +518,8 @@ public class BayouManager
 			System.out.print( " set_sleeptime\n" );
 			System.out.print( " set_talking\n" );
 			System.out.print( " set_updating\n" );
+			System.out.print( " start\n" );
+			System.out.print( " start_primary\n" );
 			System.out.print( " unalias\n" );
 			System.out.print( "Call a command with no arguments for usage info\n" );
 			return;
