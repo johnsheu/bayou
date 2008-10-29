@@ -146,13 +146,12 @@ public class BayouServer<K, V>
 					{
 						synchronized( database )
 						{
-							if ( ( state == ServerState.RETIRING ||
-								state == ServerState.CREATED ) &&
-								message instanceof BayouAERequest )
+							if ( message instanceof BayouAERequest )
 							{
 								BayouAERequest msg = (BayouAERequest)message;
 								BayouAEResponse<K, V> reply = database.getUpdates( msg );
-								if ( msg.isCreate() && state == ServerState.CREATED )
+								if ( msg.isCreate() && ( state == ServerState.CREATED ||
+									state == ServerState.CREATING ) )
 									reply.addServerID( new ServerID( serverID,
 										database.getAcceptStamp() + 1 ) );
 								reply.setAddress( msg.getAddress() );
