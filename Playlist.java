@@ -16,12 +16,17 @@ public class Playlist extends HashMap<String, String> {
 		super( map );
 	}
 	
-	public Song getSong(String songTitle){
+	public Song getSong(String songTitle)
+	{
 		return new Song(songTitle, get(songTitle));
 	}
 	
-	public Song getRandomSong(Random rn){
-		Map.Entry<String, String> e = entrySet().toArray((Map.Entry<String, String>[]) null)[rn.nextInt(entrySet().size())];
+	public Song getRandomSong(Random rn)
+	{
+		if(entrySet().size() == 0)
+			return null;
+		Map.Entry<String, String>[] a = new Map.Entry[0];
+		Map.Entry<String, String> e = entrySet().toArray(a)[rn.nextInt(entrySet().size())];
 		return new Song(e.getKey(), e.getValue());
 	}
 }

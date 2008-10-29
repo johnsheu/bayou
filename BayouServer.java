@@ -175,9 +175,12 @@ public class BayouServer<K, V>
 			{
 				synchronized( addresses )
 				{
-					BayouAERequest message = database.makeRequest();
-					message.setAddress( addresses.get( random.nextInt( addresses.size() ) ) );
-					communicator.sendMessage( message );
+					if( addresses.size() > 0 )
+					{
+						BayouAERequest message = database.makeRequest();
+						message.setAddress( addresses.get( random.nextInt( addresses.size() ) ) );
+						communicator.sendMessage( message );
+					}
 				}
 				
 				try
@@ -284,6 +287,14 @@ public class BayouServer<K, V>
 		{
 			if ( serverID != null )
 				return;
+			
+			while(serverID == null)
+			{
+				//block until we get a serverID
+				//TODO :: REMOVE THIS HACK
+				serverID = new ServerID(null, (long) 0);
+			}
+			
 			//  Do stuff
 		}
 	}
@@ -424,6 +435,13 @@ public class BayouServer<K, V>
 
 		BayouServer<String, String> server = new BayouServer<String, String>( port );
 		server.start();
+	}
+	
+	public String dump()
+	{
+		if ( database != null )
+			return database.dump();
+		return "";
 	}
 }
 

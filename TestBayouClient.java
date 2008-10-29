@@ -1,31 +1,37 @@
 import java.util.Random;
 import java.util.Scanner;
 
-public class TestBayouClient extends BayouClient{
+public class TestBayouClient extends BayouClient
+{
+	//private final Random RN = new Random(314159265); //Deterministic randomness
+	private final Random RN = new Random(); //Nondeterministic randomness
 	
-	private final Random RN = new Random(314159265);
-	
-	public static void main(String[] args) {
+	public static void main(String[] args) 
+	{
 		Integer port = Integer.parseInt(args[0]);
 		TestBayouClient client = new TestBayouClient(port);
 		client.breakOurSystem();
+		System.exit(0);
 	}
 
-	public TestBayouClient(int port){
+	public TestBayouClient(int port)
+	{
 		super(port, new Scanner(System.in));
 	}
 
 	/**
 	 * Creates a random song and adds it to the playlist.
 	 */
-	private void addRandomSong(){
+	private void addRandomSong()
+	{
 		addSong(createRandomSong());
 	}
 
 	/**
 	 * Removes a random song from the playlist, or tries to remove a randomly generated song..
 	 */
-	private void removeRandomSong(){
+	private void removeRandomSong()
+	{
 		if(RN.nextBoolean())
 			removeSong(createRandomSong());
 		else
@@ -35,40 +41,47 @@ public class TestBayouClient extends BayouClient{
 	/**
 	 * Modifies URL of randomly chosen song from playlist, or modifies a nonexistent song (should return error flag).
 	 */
-	private void randomModifyRandomSong(){    	
+	private void randomModifyRandomSong()
+	{    	
 		if(RN.nextBoolean())
 			modifySong(getPlaylist().getRandomSong(RN).setURL(createRandomURL())); //Modify existing song.
 		else
 			modifySong(createRandomSong()); //Modify song that probably doesn't exist.
 	}
 
-	private Song createRandomSong() {
+	private Song createRandomSong() 
+	{
 		return new Song(createRandomTitle(), createRandomURL());
 	}
 
-	private String createRandomTitle(){
+	private String createRandomTitle()
+	{
 		String title = "" + RN.nextInt();
-		switch (RN.nextInt(6)) {
+		switch (RN.nextInt(6)) 
+		{
 			case 0: title += " Reasons I Love You"; break; //Typical.
 			case 1: title += " Problems and malloc Ain't One (Java Ed.)"; break; //Garbage collection is nice sometimes.
 			case 2: title += " Problems and Node Failure Ain't One"; break; //That's why we're here.
 			case 3: title += " Red Balloons"; break; //99 is so overdone.
 			case 4: title = "Telemann's Symphony No. " + title; break; //Suitable for the most prolific classical composer.
 			case 5: title = "Fur Elise"; break;  //For deliberate collisions.
-			}
+		}
 		return title;
 	}
 
-	private String createRandomURL(){
+	private String createRandomURL()
+	{
 		return "http://www.cs.utexas.edu/~lorenzo/music/" + RN.nextInt() + ".mp3";
 	}
 
-	public void breakOurSystem(){
+	public void breakOurSystem()
+	{
 		testUseCases();
 		stressTest();
 	}
 
-	private void testUseCases() {
+	private void testUseCases() 
+	{
 		//add same song twice
 		Song m_song = createRandomSong();
 		addSong(m_song);
@@ -99,17 +112,24 @@ public class TestBayouClient extends BayouClient{
 	}
 
 	//TODO :: Not very stressful yet.  Remove/lower sleep() time after basic functionality is okay.
-	private void stressTest() {
+	private void stressTest()
+	{
+		int i = 0;
 		//Random testing.
-		while(true){
-			switch (RN.nextInt(3)){
-			case 0: addRandomSong(); break;
-			case 1: randomModifyRandomSong(); break;
-			case 2: removeRandomSong(); break;
+		while(++i < 500)
+		{
+			switch (RN.nextInt(3))
+			{
+				case 0: addRandomSong(); break;
+				case 1: randomModifyRandomSong(); break;
+				case 2: removeRandomSong(); break;
 			}
-		try {Thread.sleep(500);}
-			catch (InterruptedException e) {}
+			
+//		try {Thread.sleep(1);}
+//			catch (InterruptedException e) {}
+//		
 		}
+		
+		listSongs();
 	}
-	
 }
