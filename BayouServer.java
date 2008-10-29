@@ -137,7 +137,8 @@ public class BayouServer<K, V>
 							}
 							case RETIRE:
 							{
-								break;
+								retire();
+								BayouServer.this.stop();
 							}
 						}
 					}

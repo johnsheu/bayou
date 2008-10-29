@@ -113,6 +113,23 @@ public class BayouManager
 			server.start();
 			return;
 		}
+		else if ( args[0].equalsIgnoreCase( "retire" ) )
+		{
+			if ( args.length != 2 )
+			{
+				System.out.print( "retire <host:port>\n" );
+				return;
+			}
+			InetSocketAddress address = getAddress( args[1] );
+			if ( address == null )
+				return;
+
+			ManagerMessage message = new ManagerMessage();
+			message.setAddress( address );
+			message.makeMessage( ManagerMessage.Type.RETIRE,
+				null, null, null, null );
+			communicator.sendMessage( message );
+		}
 		else if ( args[0].equalsIgnoreCase( "alias" ) )
 		{
 			if ( args.length != 3 )
@@ -433,6 +450,7 @@ public class BayouManager
 			System.out.print( " get_talking\n" );
 			System.out.print( " get_updating\n" );
 			System.out.print( " quit\n" );
+			System.out.print( " retire\n" );
 			System.out.print( " set_addresses\n" );
 			System.out.print( " set_caching\n" );
 			System.out.print( " set_primary\n" );
