@@ -169,7 +169,8 @@ public class TestBayou
 
 	public void testGetUpdates()
 	{
-		BayouDB<String, String> db = new BayouDB<String, String>();
+		BayouDB<String, String> db1 = new BayouDB<String, String>();
+		BayouDB<String, String> db2 = new BayouDB<String, String>();
 
 		ServerID sid1 = new ServerID( null, 1L ),
 			 sid2 = new ServerID( sid1, 2L ),
@@ -185,9 +186,10 @@ public class TestBayou
 			wid5  = new WriteID( 5L, 1L, sid4 ),
 			wid6  = new WriteID( 6L, 2L, sid2 ),
 			wid7  = new WriteID( 7L, 2L, sid4 ),
-			wid8  = new WriteID( 2L, sid3 ),
-			wid9  = new WriteID( 3L, sid1 ),
-			wid10 = new WriteID( 3L, sid2 ),
+
+			wid8  = new WriteID( 1L, sid1 ),
+			wid9  = new WriteID( 2L, sid1 ),
+			wid10 = new WriteID( 3L, sid1 ),
 			wid11 = new WriteID( 3L, sid3 ),
 			wid12 = new WriteID( 3L, sid4 ),
 			wid13 = new WriteID( 4L, sid2 ),
@@ -195,11 +197,13 @@ public class TestBayou
 			wid15 = new WriteID( 5L, sid2 );
 
 
-		BayouAEResponse resp = new BayouAEResponse();		
+		BayouAEResponse resp1 = new BayouAEResponse();
+		BayouAEResponse resp2 = new BayouAEResponse();
 
-		resp.addWrite( new BayouWrite<String, String> ("", "", BayouWrite.Type.EDIT, wid1  ));
-		resp.addWrite( new BayouWrite<String, String> ("", "", BayouWrite.Type.EDIT, wid2  ));
-		resp.addWrite( new BayouWrite<String, String> ("", "", BayouWrite.Type.EDIT, wid3  ));
+		resp1.addWrite( new BayouWrite<String, String> ("", "", BayouWrite.Type.EDIT, wid1  ));
+		resp1.addWrite( new BayouWrite<String, String> ("", "", BayouWrite.Type.EDIT, wid2  ));
+		resp1.addWrite( new BayouWrite<String, String> ("", "", BayouWrite.Type.EDIT, wid3  ));
+
 		/*
 		resp.addWrite( new BayouWrite<String, String> ("", "", BayouWrite.Type.EDIT, wid4  ));
 		resp.addWrite( new BayouWrite<String, String> ("", "", BayouWrite.Type.EDIT, wid5  ));
@@ -215,8 +219,8 @@ public class TestBayou
 		resp.addWrite( new BayouWrite<String, String> ("", "", BayouWrite.Type.EDIT, wid15 ));
 		*/
 
-		//db.setTruncate( 6L );
-		db.applyUpdates( resp );
+		//db1.setTruncate( 6L );
+		db1.applyUpdates( resp1 );
 
 		HashMap<ServerID, Long> versionVector = new HashMap<ServerID, Long>();
 		
@@ -225,11 +229,23 @@ public class TestBayou
 		versionVector.put( sid3, 0L );
 		versionVector.put( sid4, 0L );
 		
-		BayouAERequest request = new BayouAERequest( 0L, 0L, versionVector );
+		BayouAERequest request = new BayouAERequest( -1L, -1L, versionVector );
 
-		resp = db.getUpdates( request );
+		resp1 = db1.getUpdates( request );
 
-		printResponse( resp );
+		printResponse( resp1 );
+
+
+		db2.setPrimary( true );
+		resp2.addWrite( new BayouWrite<String, String> ("", "", BayouWrite.Type.EDIT, wid8  ));
+		resp2.addWrite( new BayouWrite<String, String> ("", "", BayouWrite.Type.EDIT, wid9  ));
+		resp2.addWrite( new BayouWrite<String, String> ("", "", BayouWrite.Type.EDIT, wid10 ));
+		db2.applyUpdates( resp2 );
+
+		resp2 = db2.getUpdates( request );
+
+		printResponse( resp2 );
+
 	}
 
 	private void printResponse( BayouAEResponse resp )
