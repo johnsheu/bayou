@@ -5,6 +5,8 @@ public class BayouAERequest extends Message implements Serializable
 {
 	private static final long serialVersionUID = 1L;
 
+	private ServerID senderID = null;
+
 	private long recvOSN = -1;
 
 	private long recvCSN = -1;
@@ -43,6 +45,16 @@ public class BayouAERequest extends Message implements Serializable
 	public boolean isCreate()
 	{
 		return isCreate;
+	}
+	
+	public void setSenderID( ServerID id )
+	{
+		senderID = id;
+	}
+	
+	public ServerID getSenderID()
+	{
+		return senderID;
 	}
 }
 

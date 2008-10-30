@@ -3,7 +3,9 @@ import java.io.FileReader;
 import java.io.InputStreamReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -39,13 +41,21 @@ public class BayouManager
 			try
 			{
 				nport = Integer.parseInt( port );
+				if ( index == 0 )
+					return new InetSocketAddress( InetAddress.getLocalHost().getHostName(), nport );
+				else
+					return new InetSocketAddress( host, nport );
 			}
 			catch ( NumberFormatException ex )
 			{
 				ex.printStackTrace();
 				return null;
 			}
-			return new InetSocketAddress( host, nport );
+			catch ( UnknownHostException ex )
+			{
+				ex.printStackTrace();
+				return null;
+			}
 		}
 	}
 
@@ -313,6 +323,26 @@ public class BayouManager
 			communicator.sendMessage( message );
 			return;
 		}
+		else if ( args[0].equalsIgnoreCase( "set_logging" ) )
+		{
+			if ( args.length != 3 )
+			{
+				System.out.print( "set_logging <host:port>|<alias> <\"true\"|\"false\">\n" );
+				return;
+			}
+
+			boolean value = Boolean.parseBoolean( args[2] );
+			InetSocketAddress address = getAddress( args[1] );
+			if ( address == null )
+				return;
+
+			ManagerMessage message = new ManagerMessage();
+			message.setAddress( address );
+			message.makeMessage( ManagerMessage.Type.SET_LOGGING,
+				null, value, null, null );
+			communicator.sendMessage( message );
+			return;
+		}
 		else if ( args[0].equalsIgnoreCase( "set_caching" ) )
 		{
 			if ( args.length != 3 )
@@ -439,6 +469,7 @@ public class BayouManager
 			System.out.print( " retire\n" );
 			System.out.print( " set_addresses\n" );
 			System.out.print( " set_caching\n" );
+			System.out.print( " set_logging\n" );
 			System.out.print( " set_primary\n" );
 			System.out.print( " set_sleeptime\n" );
 			System.out.print( " set_talking\n" );

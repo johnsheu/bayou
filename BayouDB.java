@@ -26,7 +26,7 @@ public class BayouDB<K, V> implements Serializable
 	private boolean primary;
 	private long truncateLimit;
 	
-	//For caching current rendering of the playlist/map.
+	//  For caching current rendering of the map.
 	private boolean caching;
 	private boolean modified;
 	private HashMap<K, V> renderedData;
@@ -64,7 +64,7 @@ public class BayouDB<K, V> implements Serializable
 		truncateLimit = truncate;
 	}
 
-	public void clear()
+	public synchronized void clear()
 	{
 		writeData = new HashMap<K, V>();
 		writeLog = new TreeSet<BayouWrite<K, V>>();
@@ -78,7 +78,7 @@ public class BayouDB<K, V> implements Serializable
 		renderedData = null;
 	}
 
-	public BayouAEResponse<K, V> getUpdates( BayouAERequest request )
+	public synchronized BayouAEResponse<K, V> getUpdates( BayouAERequest request )
 	{
 		BayouAEResponse<K, V> response = new BayouAEResponse<K, V>();
 		HashMap<ServerID, Long> recvVersionVector = request.getRecvVV();
@@ -472,7 +472,7 @@ public class BayouDB<K, V> implements Serializable
 	{
 		isOutputLogging = outputLogging;
 	}
-
+	
 	public String dump()
 	{
 		StringBuffer buffer = new StringBuffer();

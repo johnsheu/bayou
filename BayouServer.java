@@ -2,6 +2,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.Random; 
 import java.net.InetSocketAddress;
+import java.io.PrintStream;
 
 public class BayouServer<K, V>
 {
@@ -52,6 +53,7 @@ public class BayouServer<K, V>
 									"RETIRED:   " + isRetired() + '\n' +
 									"TALKING:   " + performAntiEntropy + '\n' +
 									"UPDATING:  " + performUpdates + '\n' +
+									"LOGGING:   " + database.isOutputLogging() + '\n' +
 									"SLEEPTIME: " + sleepTime + '\n' +
 									"CACHING:   " + database.isCaching() + '\n' +
 									"PRIMARY    " + database.isPrimary() + '\n' );
@@ -96,6 +98,11 @@ public class BayouServer<K, V>
 								database.setCaching( msg.getBoolean().booleanValue() );
 								break;
 							}
+							case SET_LOGGING:
+							{
+								database.setOutputLogging( msg.getBoolean().booleanValue() );
+								break;
+							}
 							case SET_PRIMARY:
 							{
 								database.setPrimary( msg.getBoolean().booleanValue() );
@@ -109,7 +116,6 @@ public class BayouServer<K, V>
 							case RETIRE:
 							{
 								retire( -1L );
-								BayouServer.this.stop();
 								break;
 							}
 						}
@@ -132,10 +138,11 @@ public class BayouServer<K, V>
 						synchronized ( database )
 						{
 							if ( state != ServerState.CREATING &&
-								message instanceof BayouAERequest )
+								performAntiEntropy && message instanceof BayouAERequest )
 							{
 								BayouAERequest msg = (BayouAERequest)message;
 								BayouAEResponse<K, V> reply = database.getUpdates( msg );
+								reply.setSenderID( serverID );
 								if ( msg.isCreate() && state == ServerState.CREATED )
 								{
 									reply.addServerID( new ServerID( serverID,
@@ -154,6 +161,13 @@ public class BayouServer<K, V>
 								message instanceof BayouAEResponse<?, ?> )
 							{
 								BayouAEResponse<K, V> msg = (BayouAEResponse<K, V>)message;
+								if ( logStream != null && msg.getAddress().equals( searchAddr ) )
+								{
+									logStream.print( serverID.toString() + ": anti-entropy request with " +
+										msg.getSenderID().toString() + '\n' );
+									logStream.print( msg.dump() );
+									searchAddr = null;
+								}
 								if ( state == ServerState.CREATING &&
 									msg.getServerID() != null )
 								{
@@ -201,6 +215,7 @@ public class BayouServer<K, V>
 					if ( address != null )
 					{
 						BayouAERequest message = database.makeRequest();
+						message.setSenderID( serverID );
 						message.setAddress( address );
 						communicator.sendMessage( message );
 					}
@@ -238,10 +253,14 @@ public class BayouServer<K, V>
 	private ArrayList<InetSocketAddress> addresses = null;
 
 	private ServerID serverID = null;
+	
+	private InetSocketAddress searchAddr = null;
 
 	private ServerState state = ServerState.RETIRED;
 	
 	private long sleepTime = 100L;
+	
+	private PrintStream logStream = null;
 
 	Random random = null;
 
@@ -533,6 +552,51 @@ public class BayouServer<K, V>
 				return addresses.get( random.nextInt( addresses.size() ) );
 		}
 		return null;
+	}
+
+	public boolean getPerformAntiEntropy()
+	{
+		return performAntiEntropy;
+	}
+
+	public void setPerformAntiEntropy( boolean value )
+	{
+		performAntiEntropy = value;
+	}
+
+	public boolean getPerformUpdates()
+	{
+		return performUpdates;
+	}
+
+	public void setPerformUpdates( boolean value )
+	{
+		performUpdates = value;
+	}
+	
+	public void setLogStream( PrintStream log )
+	{
+		synchronized ( database )
+		{
+			logStream = log;
+		}
+	}
+	
+	public PrintStream getLogStream()
+	{
+		return logStream;
+	}
+	
+	public void forceAntiEntropy( InetSocketAddress address )
+	{
+		if ( state != ServerState.CREATED )
+			return;
+		
+		searchAddr = address;
+		BayouAERequest message = database.makeRequest();
+		message.setSenderID( serverID );
+		message.setAddress( address );
+		communicator.sendMessage( message );
 	}
 
 	public String dump()

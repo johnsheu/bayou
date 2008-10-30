@@ -7,6 +7,8 @@ public class BayouAEResponse<K, V> extends Message implements Serializable
 	private static final long serialVersionUID = 1L;
 
 	private ServerID newID = null;
+	
+	private ServerID senderID = null;
 
 	private HashMap<K, V> newDB = null;
 
@@ -52,6 +54,11 @@ public class BayouAEResponse<K, V> extends Message implements Serializable
 	{
 		return newID;
 	}
+	
+	public ServerID getSenderID()
+	{
+		return senderID;
+	}
 
 	public void addDatabase( HashMap<K, V> db )
 	{
@@ -85,6 +92,21 @@ public class BayouAEResponse<K, V> extends Message implements Serializable
 	public void addServerID( ServerID id )
 	{
 		newID = id;
+	}
+	
+	public void setSenderID( ServerID id )
+	{
+		senderID = id;
+	}
+	
+	public String dump()
+	{
+		return "S:   " + senderID + '\n' +
+			"DB:  " + newDB + '\n' +
+			"OV:  " + newOV + '\n' +
+			"OSN: " + newOSN + '\n' +
+			"CN:  " + newCommits + '\n' +
+			"W:   " + newWrites + '\n';
 	}
 }
 

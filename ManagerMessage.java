@@ -37,6 +37,7 @@ public class ManagerMessage extends Message implements Serializable
 		SET_TALKING,
 		SET_UPDATING,
 		SET_SLEEPTIME,
+		SET_LOGGING,
 		SET_CACHING,
 		SET_PRIMARY,
 		GET_ADDRESSES,

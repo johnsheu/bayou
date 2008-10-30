@@ -73,7 +73,7 @@ public class Communicator
 					}
 					catch ( IOException ex )
 					{
-						ex.printStackTrace();
+						//  ex.printStackTrace();
 					}
 				}
 			}
@@ -141,7 +141,7 @@ public class Communicator
 				}
 				catch ( IOException ex )
 				{
-					ex.printStackTrace();
+					//  ex.printStackTrace();
 				}
 				catch ( ClassNotFoundException ex )
 				{
@@ -155,7 +155,7 @@ public class Communicator
 					}
 					catch ( IOException ex )
 					{
-						ex.printStackTrace();
+						//  ex.printStackTrace();
 					}
 				}
 			}
