@@ -3,21 +3,32 @@ import java.util.Scanner;
 
 public class TestBayouClient extends BayouClient
 {
-	//private final Random RN = new Random(314159265); //Deterministic randomness
-	private final Random RN = new Random(); //Nondeterministic randomness
+	private final Random RN;
 	
 	public static void main(String[] args) 
 	{
+		if(args.length!=4){
+			System.out.println("Usage: java TestBayouClient (int port) (boolean primary) (int sleepTimeInMilliseconds) (int numberOfRandomActions) (boolean deterministic)");
+			System.exit(1);
+		}
 		Integer port = Integer.parseInt(args[0]);
 		boolean primary = Boolean.parseBoolean(args[1]);
-		TestBayouClient client = new TestBayouClient(port, primary);
-		client.breakOurSystem();
+		int sleepTime = Integer.parseInt(args[2]);
+		int actions = Integer.parseInt(args[3]);
+		boolean deterministic = Boolean.parseBoolean(args[4]);
+		
+		TestBayouClient client = new TestBayouClient(port, primary, deterministic);
+		client.breakOurSystem(sleepTime, actions);
 		System.exit(0);
 	}
 
-	public TestBayouClient(int port, boolean primary)
+	public TestBayouClient(int port, boolean primary, boolean deterministic)
 	{
 		super(port, new Scanner(System.in), primary);
+		if(deterministic) 
+			RN = new Random(314159265);
+		else 
+			RN = new Random();
 	}
 
 	/**
@@ -75,10 +86,10 @@ public class TestBayouClient extends BayouClient
 		return "http://www.cs.utexas.edu/~lorenzo/music/" + RN.nextInt() + ".mp3";
 	}
 
-	public void breakOurSystem()
+	public void breakOurSystem(int sleepTime, int actions)
 	{
 		testUseCases();
-		stressTest();
+		stressTest(sleepTime, actions);
 	}
 
 	private void testUseCases() 
@@ -112,12 +123,11 @@ public class TestBayouClient extends BayouClient
 		assert !getPlaylist().containsKey(m_song.getName());
 	}
 
-	//TODO :: Not very stressful yet.  Remove/lower sleep() time after basic functionality is okay.
-	private void stressTest()
+	private void stressTest(int sleepTime, int actions)
 	{
 		int i = 0;
 		//Random testing.
-		while(++i < 500)
+		while(++i < actions)
 		{
 			switch (RN.nextInt(3))
 			{
@@ -126,9 +136,9 @@ public class TestBayouClient extends BayouClient
 				case 2: removeRandomSong(); break;
 			}
 			
-//		try {Thread.sleep(1);}
-//			catch (InterruptedException e) {}
-//		
+		try {Thread.sleep(sleepTime);}
+			catch (InterruptedException e) {}
+		
 		}
 		
 		listSongs();

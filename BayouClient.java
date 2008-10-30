@@ -2,8 +2,6 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.nio.channels.ServerSocketChannel;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.Scanner;
 
@@ -11,6 +9,7 @@ public class BayouClient{
 
     protected BayouServer<String, String> m_server;
     protected Scanner m_scanner;
+    private final String SEPARATOR = "---------------";
     
     public static void main(String[] args){
     	printWelcomeMessage();
@@ -65,32 +64,75 @@ public class BayouClient{
 	protected void startUI() {
     	while(true){
 	    	System.out.print(
-	    			//"0 - Connect to a Network Manually \n" +
+	    			SEPARATOR + "\n" +
+	    			"0 - Join a Network \n" +
 	    			"1 - Add Song \n" +
 	    			"2 - Modify Song \n" +
 	    			"3 - Remove Song By Name \n" +
 	    			"4 - List Songs \n" +
 	    			"5 - Go Online \n" +
 	    			"6 - Go Offline \n" +
-	    			"7 - Exit \n" +
+	    			"7 - Test Menu \n" +
+	    			"8 - Exit \n" +
 	    			"Enter number: ");
 	    	
-	    	int switch_val = -1;
-	    	try{switch_val = m_scanner.nextInt();}
-	    	catch(java.util.InputMismatchException e){}
-	    	finally{m_scanner.nextLine();} //Advance past any leftover input.
-	    	
-	    	switch(switch_val){
+	    	outer:
+	    	switch(getMenuChoice()){
+	    	case 0:
+	    		if(!m_server.isStarted()) {
+	    			System.out.println("Server must be started to join a network.");
+	    			break outer;
+	    		}
+	    		appendAddressListPrompt();
+	    		m_server.create(); break;
 	    	case 1: addSong(new Song(prompt(m_scanner, "title"), prompt(m_scanner, "URL"))); break;
 	    	case 2: modifySong(new Song(prompt(m_scanner, "title"), prompt(m_scanner, "URL"))); break;
 	    	case 3: removeSong(prompt(m_scanner, "title")); break;
 	    	case 4: listSongs(); break;
 	    	case 5: goOnline(); break;
 	    	case 6: goOffline(); break;
-	    	case 7: exit(); break;
+	    	case 7: testMenu(); break;
+	    	case 8: exit(); break;
 	    	//case 0: System.out.println("You can't do this yet.  Sorry!"); break;
 	    	default: System.out.println("Invalid option."); break;}}}
+
+	protected void appendAddressListPrompt() {
+		m_server.getAddressList().add(addressPrompt());
+		m_server.setAddressList(m_server.getAddressList());
+	}
     
+	private InetSocketAddress addressPrompt() {
+		return new InetSocketAddress(prompt(m_scanner, "hostname"), Integer.parseInt(prompt(m_scanner, "port")));
+	}
+
+	protected void testMenu(){
+		outer:
+		while(true){
+	    	System.out.print(
+	    			SEPARATOR + "\n" +
+	    			"1 - Force Anti-Entropy \n" +
+	    			"2 - View Address List \n" +
+	    			"3 - Add to Address List \n" +
+	    			"4 - Back to Main Menu \n" +
+	    			"Enter number: ");
+	    	
+	    	switch(getMenuChoice()){
+	    	case 1: m_server.forceAntiEntropy(addressPrompt()); break;
+	    	case 2: System.out.println(m_server.getAddressList()); break;
+	    	case 3: appendAddressListPrompt(); break;
+	    	case 4: break outer;
+	    	default: System.out.println("Invalid option."); break;}
+		}
+	}
+
+	protected int getMenuChoice() {
+		int switch_val = -1;
+		try{switch_val = m_scanner.nextInt();}
+		catch(java.util.InputMismatchException e){}
+		finally{m_scanner.nextLine();} //Advance past any leftover input.
+		return switch_val;
+	}
+	
     protected void goOffline() {
 		m_server.stop();
 		System.out.println("You're in offline mode.");
@@ -110,11 +152,11 @@ public class BayouClient{
     	System.exit(0);}
 
 	protected void listSongs() {
-    	final String SEPARATOR = "\n---------------";
-    	System.out.println(SEPARATOR);
-    	for(Map.Entry<String, String> ent : getPlaylist().entrySet())
-    		System.out.println("Title: " + ent.getKey() + "\nURL:" + ent.getValue() + SEPARATOR);
+		System.out.println(SEPARATOR);
+    	for(Map.Entry<String, String> ent : getPlaylist().entrySet()){
+    		System.out.println("Title: " + ent.getKey() + "\nURL:" + ent.getValue() + "\n" + SEPARATOR);
     	}
+    }
 	
 	protected String prompt(Scanner m_scanner, String promptText){
 		System.out.print("Enter " + promptText + ": ");
@@ -138,11 +180,8 @@ public class BayouClient{
     	m_server = new BayouServer<String, String>(port, primary);
     	goOnline();
     	//m_server.setAddressList(new ArrayList<InetSocketAddress>(Arrays.asList(new InetSocketAddress[]{new InetSocketAddress("localhost", port)})));
-    	m_server.create();
     	m_scanner = inputReader;}
     
     public BayouClient(BayouServer<String, String> server){
     	m_server = server;
-    	goOnline();
-    	if(!m_server.isCreated())
-    		m_server.create();}}
+    	goOnline();}}
