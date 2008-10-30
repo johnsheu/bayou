@@ -212,6 +212,9 @@ public class BayouDB<K, V> implements Serializable
 				CSN = Math.max( CSN, cid.getCSN() );
 				item.getWriteID().setCSN( CSN );
 				writeLog.add( item );
+				
+				if ( item.getType() == BayouWrite.Type.RETIRE )
+					versionVector.remove( cid.getServerID() );
 
 				acceptStamp = Math.max( acceptStamp, cid.getAcceptStamp() + 1L );
 
@@ -237,9 +240,15 @@ public class BayouDB<K, V> implements Serializable
 				{
 					BayouWrite<K, V> write = witer.next();
 					WriteID wid = write.getWriteID();
+					Long as = versionVector.get( wid.getServerID() );
+					if ( as == null || as.compareTo( wid.getAcceptStamp() ) < 0 )
+						versionVector.put( wid.getServerID(), wid.getAcceptStamp() );
 					if ( wid.isCommitted() )
 					{
 						CSN = Math.max( CSN, write.getWriteID().getCSN() );
+						
+						if ( write.getType() == BayouWrite.Type.RETIRE )
+							versionVector.remove( wid.getServerID() );
 
 						if( isOutputLogging )
 						{
@@ -247,12 +256,7 @@ public class BayouDB<K, V> implements Serializable
 									   "  AcceptStamp: " + wid.getAcceptStamp() +
 									   "  Server: " + wid.getServerID() );
 						}
-							
-
 					}
-					Long as = versionVector.get( wid.getServerID() );
-					if ( as == null || as.compareTo( wid.getAcceptStamp() ) < 0 )
-						versionVector.put( wid.getServerID(), wid.getAcceptStamp() );
 					writeLog.add( write );
 
 					acceptStamp = Math.max( acceptStamp, wid.getAcceptStamp() + 1L );
