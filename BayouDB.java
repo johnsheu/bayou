@@ -4,7 +4,10 @@ import java.util.LinkedList;
 import java.util.TreeSet;
 import java.util.SortedSet;
 import java.util.Iterator;
+import java.io.File;
+import java.io.PrintStream;
 import java.io.Serializable;
+
 
 public class BayouDB<K, V> implements Serializable
 {
@@ -27,6 +30,9 @@ public class BayouDB<K, V> implements Serializable
 	private boolean caching;
 	private boolean modified;
 	private HashMap<K, V> renderedData;
+
+	private static int outputCounter = 0;
+	private PrintStream outputLog;
 	
 	public BayouDB()
 	{
@@ -34,6 +40,14 @@ public class BayouDB<K, V> implements Serializable
 		primary = false;
 		truncateLimit = 16L;
 		caching = false;
+		try
+		{
+		    outputLog = new PrintStream( new File( "Output" + outputCounter++ + ".txt") );
+		}
+		catch( Exception e )
+		{
+			e.printStackTrace();
+		}
 	}
 	
 	public BayouDB( boolean useCaching )
@@ -198,6 +212,11 @@ public class BayouDB<K, V> implements Serializable
 				writeLog.add( item );
 
 				acceptStamp = Math.max( acceptStamp, cid.getAcceptStamp() + 1L );
+
+				outputLog.println( "CSN: " + cid.getCSN() + 
+						   "  AcceptStamp: " + cid.getAcceptStamp() +
+						   "  Server: " + cid.getServerID() );
+
 			}
 		}
 
@@ -212,9 +231,17 @@ public class BayouDB<K, V> implements Serializable
 				while ( witer.hasNext() )
 				{
 					BayouWrite<K, V> write = witer.next();
-					if ( write.getWriteID().isCommitted() )
-						CSN = Math.max( CSN, write.getWriteID().getCSN() );
 					WriteID wid = write.getWriteID();
+					if ( wid.isCommitted() )
+					{
+						CSN = Math.max( CSN, write.getWriteID().getCSN() );
+
+						outputLog.println( "CSN: " + wid.getCSN() +
+								   "  AcceptStamp: " + wid.getAcceptStamp() +
+								   "  Server: " + wid.getServerID() );
+							
+
+					}
 					if ( write.getType() == BayouWrite.Type.RETIRE )
 					{
 						versionVector.remove( wid.getServerID() );
@@ -250,6 +277,12 @@ public class BayouDB<K, V> implements Serializable
 					writeLog.add( write );
 
 					acceptStamp = Math.max( acceptStamp, wid.getAcceptStamp() + 1L );
+
+					outputLog.println( "CSN: " + wid.getCSN() +						
+							   "  AcceptStamp: " + wid.getAcceptStamp() +
+							   "  Server: " + wid.getServerID() );
+
+			
 				}
 			}
 		}
@@ -290,12 +323,18 @@ public class BayouDB<K, V> implements Serializable
 	public synchronized void addWrite( BayouWrite<K, V> write )
 	{
 		modified = true;
+		WriteID id = write.getWriteID();
 		if ( primary )
+		{
 			write.getWriteID().setCSN( ++CSN );
+			outputLog.println( "CSN: " + id.getCSN() +
+					   "  AcceptStamp: " + id.getAcceptStamp() +
+					   "  Server: " + id.getServerID() );
+		}
+
 		writeLog.add( write );
 		applyWrite( write, writeData );
 		acceptStamp += 1L;
-		WriteID id = write.getWriteID();
 		versionVector.put( id.getServerID(), id.getAcceptStamp() );
 	}
 
