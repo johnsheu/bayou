@@ -59,7 +59,7 @@ public class Communicator
 				}
 				catch ( IOException ex )
 				{
-					ex.printStackTrace();
+					//  ex.printStackTrace();
 					ErrorMessage emessage = new ErrorMessage();
 					emessage.setAddress( message.getAddress() );
 					emessage.setError( ex.toString() );

@@ -5,7 +5,9 @@ import java.util.TreeSet;
 import java.util.SortedSet;
 import java.util.Iterator;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.PrintStream;
+import java.io.ObjectStreamException;
 import java.io.Serializable;
 
 
@@ -32,8 +34,28 @@ public class BayouDB<K, V> implements Serializable
 	private HashMap<K, V> renderedData;
 
 	private static int outputCounter = 0;
-	private PrintStream outputLog;
+	private BayouPrintStream outputLog;
 	private boolean isOutputLogging;
+	
+	private class BayouPrintStream extends PrintStream implements Serializable
+	{
+		private static final long serialVersionUID = 1L;
+		
+		private Object writeReplace() throws ObjectStreamException
+		{
+			return null;
+		}
+		
+		private Object readResolve() throws ObjectStreamException
+		{
+			return null;
+		}
+		
+		public BayouPrintStream( File file ) throws FileNotFoundException
+		{
+			super( file );
+		}
+	}
 	
 	public BayouDB()
 	{
@@ -44,7 +66,7 @@ public class BayouDB<K, V> implements Serializable
 		isOutputLogging = false;
 		try
 		{
-		    outputLog = new PrintStream( new File( "Output" + outputCounter++ + ".txt") );
+		    outputLog = new BayouPrintStream( new File( "Output" + outputCounter++ + ".txt") );
 		}
 		catch( Exception e )
 		{
@@ -128,42 +150,20 @@ public class BayouDB<K, V> implements Serializable
 					break;
 			}
 		}
-
-		Iterator<ServerID> servers = versionVector.keySet().iterator();
-
-		while ( servers.hasNext() )
+		
+		writes = writeLog.iterator();
+		while ( writes.hasNext() )
 		{
-			server = servers.next();
-
-			writes = writeLog.descendingIterator();
-			while ( writes.hasNext() )
-			{
-				write = writes.next();
-
-				if ( write.getWriteID().isCommitted() )
-				{
-					break;
-				}
-				else
-				{
-					writeAcceptStamp = write.getWriteID().getAcceptStamp();
-					recvAcceptStamp  = recvVersionVector.get( server );
+			write = writes.next();
+			if ( write.getWriteID().isCommitted() )
+				continue;
 			
-					if ( recvAcceptStamp == null || writeAcceptStamp.compareTo(recvAcceptStamp) > 0 )
-					{
-						writeServer = write.getWriteID().getServerID();
-						if ( server.equals( writeServer ))
-						{
-							response.addWrite( write );
-						}
-					}
-					else
-					{
-						break;
-					}
-				}
-			}
+			writeAcceptStamp = write.getWriteID().getAcceptStamp();
+			recvAcceptStamp = recvVersionVector.get( write.getWriteID().getServerID() );
+			if ( recvAcceptStamp == null || writeAcceptStamp.compareTo( recvAcceptStamp ) > 0 )
+				response.addWrite( write );
 		}
+		
 		return response;
 	}
 
@@ -250,16 +250,9 @@ public class BayouDB<K, V> implements Serializable
 							
 
 					}
-					if ( write.getType() == BayouWrite.Type.RETIRE )
-					{
-						versionVector.remove( wid.getServerID() );
-					}
-					else
-					{
-						Long as = versionVector.get( wid.getServerID() );
-						if ( as == null || as.compareTo( wid.getAcceptStamp() ) < 0 )
-							versionVector.put( wid.getServerID(), wid.getAcceptStamp() );
-					}
+					Long as = versionVector.get( wid.getServerID() );
+					if ( as == null || as.compareTo( wid.getAcceptStamp() ) < 0 )
+						versionVector.put( wid.getServerID(), wid.getAcceptStamp() );
 					writeLog.add( write );
 
 					acceptStamp = Math.max( acceptStamp, wid.getAcceptStamp() + 1L );
@@ -272,16 +265,9 @@ public class BayouDB<K, V> implements Serializable
 					BayouWrite<K, V> write = witer.next();
 					write.getWriteID().setCSN( ++CSN );
 					WriteID wid = write.getWriteID();
-					if ( write.getType() == BayouWrite.Type.RETIRE )
-					{
-						versionVector.remove( wid.getServerID() );
-					}
-					else
-					{
-						Long as = versionVector.get( wid.getServerID() );
-						if ( as == null || as.compareTo( wid.getAcceptStamp() ) < 0 )
-							versionVector.put( wid.getServerID(), wid.getAcceptStamp() );
-					}
+					Long as = versionVector.get( wid.getServerID() );
+					if ( as == null || as.compareTo( wid.getAcceptStamp() ) < 0 )
+						versionVector.put( wid.getServerID(), wid.getAcceptStamp() );
 					writeLog.add( write );
 
 					acceptStamp = Math.max( acceptStamp, wid.getAcceptStamp() + 1L );

@@ -329,6 +329,9 @@ public class BayouServer<K, V>
 			{
 				
 			}
+			
+			serverComm = null;
+			serverAct = null;
 		}
 	}
 
