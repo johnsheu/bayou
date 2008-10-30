@@ -2,6 +2,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.nio.channels.ServerSocketChannel;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Scanner;
 
@@ -84,7 +85,8 @@ public class BayouClient{
 	    			break outer;
 	    		}
 	    		appendAddressListPrompt();
-	    		m_server.create(); break;
+	    		m_server.create(); 
+	    		break;
 	    	case 1: addSong(new Song(prompt(m_scanner, "title"), prompt(m_scanner, "URL"))); break;
 	    	case 2: modifySong(new Song(prompt(m_scanner, "title"), prompt(m_scanner, "URL"))); break;
 	    	case 3: removeSong(prompt(m_scanner, "title")); break;
@@ -97,8 +99,9 @@ public class BayouClient{
 	    	default: System.out.println("Invalid option."); break;}}}
 
 	protected void appendAddressListPrompt() {
-		m_server.getAddressList().add(addressPrompt());
-		m_server.setAddressList(m_server.getAddressList());
+		ArrayList<InetSocketAddress> list = m_server.getAddressList();
+		list.add(addressPrompt());
+		m_server.setAddressList(list);
 	}
     
 	private InetSocketAddress addressPrompt() {
