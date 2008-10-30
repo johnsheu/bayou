@@ -33,6 +33,7 @@ public class BayouDB<K, V> implements Serializable
 
 	private static int outputCounter = 0;
 	private PrintStream outputLog;
+	private boolean isOutputLogging;
 	
 	public BayouDB()
 	{
@@ -40,6 +41,7 @@ public class BayouDB<K, V> implements Serializable
 		primary = false;
 		truncateLimit = 16L;
 		caching = false;
+		isOutputLogging = false;
 		try
 		{
 		    outputLog = new PrintStream( new File( "Output" + outputCounter++ + ".txt") );
@@ -213,9 +215,12 @@ public class BayouDB<K, V> implements Serializable
 
 				acceptStamp = Math.max( acceptStamp, cid.getAcceptStamp() + 1L );
 
-				outputLog.println( "CSN: " + cid.getCSN() + 
-						   "  AcceptStamp: " + cid.getAcceptStamp() +
-						   "  Server: " + cid.getServerID() );
+				if( isOutputLogging )
+				{
+					outputLog.println( "CSN: " + cid.getCSN() + 
+							   "  AcceptStamp: " + cid.getAcceptStamp() +
+							   "  Server: " + cid.getServerID() );
+				}
 
 			}
 		}
@@ -236,9 +241,12 @@ public class BayouDB<K, V> implements Serializable
 					{
 						CSN = Math.max( CSN, write.getWriteID().getCSN() );
 
-						outputLog.println( "CSN: " + wid.getCSN() +
-								   "  AcceptStamp: " + wid.getAcceptStamp() +
-								   "  Server: " + wid.getServerID() );
+						if( isOutputLogging )
+						{
+							outputLog.println( "CSN: " + wid.getCSN() +
+									   "  AcceptStamp: " + wid.getAcceptStamp() +
+									   "  Server: " + wid.getServerID() );
+						}
 							
 
 					}
@@ -278,9 +286,12 @@ public class BayouDB<K, V> implements Serializable
 
 					acceptStamp = Math.max( acceptStamp, wid.getAcceptStamp() + 1L );
 
-					outputLog.println( "CSN: " + wid.getCSN() +						
-							   "  AcceptStamp: " + wid.getAcceptStamp() +
-							   "  Server: " + wid.getServerID() );
+					if( isOutputLogging )
+					{
+						outputLog.println( "CSN: " + wid.getCSN() +						
+								   "  AcceptStamp: " + wid.getAcceptStamp() +
+								   "  Server: " + wid.getServerID() );
+					}
 
 			
 				}
@@ -327,9 +338,12 @@ public class BayouDB<K, V> implements Serializable
 		if ( primary )
 		{
 			write.getWriteID().setCSN( ++CSN );
-			outputLog.println( "CSN: " + id.getCSN() +
-					   "  AcceptStamp: " + id.getAcceptStamp() +
-					   "  Server: " + id.getServerID() );
+			if( isOutputLogging )
+			{
+				outputLog.println( "CSN: " + id.getCSN() +
+						   "  AcceptStamp: " + id.getAcceptStamp() +
+						   "  Server: " + id.getServerID() );
+			}
 		}
 
 		writeLog.add( write );
@@ -448,7 +462,17 @@ public class BayouDB<K, V> implements Serializable
 		else
 			truncateLimit = truncate;
 	}
-	
+
+	public boolean isOutputLogging()
+	{
+		return isOutputLogging;
+	}
+
+	public void setOutputLogging( boolean outputLogging )
+	{
+		isOutputLogging = outputLogging;
+	}
+
 	public String dump()
 	{
 		StringBuffer buffer = new StringBuffer();
